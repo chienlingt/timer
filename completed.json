@@ -1,0 +1,62 @@
+[
+  {
+    "title": "正方一辩 · 立论",
+    "duration": 240,
+    "isDualTimer": false
+  },
+  {
+    "title": "反方一辩 · 立论",
+    "duration": 240,
+    "isDualTimer": false
+  },
+  {
+    "title": "反方二辩 · 质询",
+    "duration": 150,
+    "isDualTimer": false
+  },
+  {
+    "title": "正方二辩 · 质询",
+    "duration": 150,
+    "isDualTimer": false
+  },
+  {
+    "title": "反方二辩 · 小结",
+    "duration": 120,
+    "isDualTimer": false
+  },
+  {
+    "title": "正方二辩 · 小结",
+    "duration": 120,
+    "isDualTimer": false
+  },
+  {
+    "title": "三辩对辩",
+    "duration": 120,
+    "isDualTimer": true
+  },
+  {
+    "title": "正方三辩 · 小结",
+    "duration": 150,
+    "isDualTimer": false
+  },
+  {
+    "title": "反方三辩 · 小结",
+    "duration": 150,
+    "isDualTimer": false
+  },
+  {
+    "title": "自由辩论",
+    "duration": 240,
+    "isDualTimer": true
+  },
+  {
+    "title": "反方四辩 · 总结",
+    "duration": 240,
+    "isDualTimer": false
+  },
+  {
+    "title": "正方四辩 · 总结",
+    "duration": 240,
+    "isDualTimer": false
+  }
+]
