@@ -1,25 +1,10 @@
-
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { faCog } from '@fortawesome/free-solid-svg-icons';
 import { useState } from "react";
 import Screen from "./components/Screen";
 import Modal from "./components/rules/Modal";
 
-// Add the cog icon to the library
 library.add(faCog);
-
-const sessions = [
-  {
-    title: "Session 1",
-    isDualTimer: true,
-    duration: 120,
-  },
-  {
-    title: "反一立论",
-    isDualTimer: false,
-    duration: 150,
-  },
-];
 
 function App() {
   const config = {
@@ -31,6 +16,13 @@ function App() {
     nextSession: ".",
   };
 
+  const [sessions, setSessions] = useState([
+    {
+      title: "请选择赛制",
+      isDualTimer: false,
+      duration: 30,
+    },
+  ]);
   const [currentSessionIndex, setCurrentSessionIndex] = useState(0);
   const [key, setKey] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -66,10 +58,13 @@ function App() {
         setIsModalOpen={setIsModalOpen}
       />
 
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        setSessions={setSessions} // Pass setSessions to Modal
+      />
     </div>
   );
 }
 
 export default App;
-
