@@ -5,9 +5,9 @@ export const isValidJsonStructure = (json) => {
     Array.isArray(json) &&
     json.every(
       (item) =>
-        _.has(item, "环节名称") &&
-        _.has(item, "时长") &&
-        _.has(item, "双方环节")
+        _.has(item, "title") &&
+        _.has(item, "duration") &&
+        _.has(item, "isDualTimer")
     )
   );
 };
