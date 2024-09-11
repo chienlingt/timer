@@ -2,7 +2,6 @@ import PropTypes from 'prop-types';
 import { useEffect, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import AddModal from "./AddRecord/AddModal";
-import Config from "./Config"; // Import Config component
 import { processJsonFile } from "./jsonHandler";
 
 const Modal = ({ isOpen, onClose, setSessions }) => {
@@ -12,7 +11,6 @@ const Modal = ({ isOpen, onClose, setSessions }) => {
   const [errorMessage, setErrorMessage] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [view, setView] = useState("upload");
-  const [isConfigOpen, setIsConfigOpen] = useState(false); // State for configuration modal
 
   const containerRef = useRef(null);
 
@@ -115,7 +113,7 @@ const Modal = ({ isOpen, onClose, setSessions }) => {
         >
           &times;
         </button>
-        <div className="flex justify-between mb-4">
+        <div className="flex justify-start mb-4">
           <button
             className={`px-4 py-2 ${view === "upload" ? "bg-blue-500" : "bg-gray-300"} text-white rounded`}
             onClick={() => setView("upload")}
@@ -123,16 +121,16 @@ const Modal = ({ isOpen, onClose, setSessions }) => {
             打开赛制
           </button>
           <button
-            className={`px-4 py-2 ${view === "customize" ? "bg-blue-500" : "bg-gray-300"} text-white rounded`}
+            className={`px-4 py-2 ${view === "customize" ? "bg-blue-500" : "bg-gray-300"} text-white rounded ml-2`}
             onClick={() => setView("customize")}
           >
-            自定义赛制
+            新创赛制
           </button>
         </div>
 
         <div
           ref={containerRef}
-          className="flex-1 overflow-y-auto mb-16"
+          className="flex-1 overflow-y-auto"
           onDragOver={allowDrop}
         >
           {view === "upload" && (
@@ -145,71 +143,56 @@ const Modal = ({ isOpen, onClose, setSessions }) => {
                 {jsonFile && <h2 className="text-lg font-bold mt-4">JSON File: {jsonFile}</h2>}
               </div>
               {showError && <p className="text-red-500 mt-2">{errorMessage}</p>}
-              {isConfigOpen && (
-                <Config onClose={() => setIsConfigOpen(false)} /> // Include Config component
-              )}
             </div>
           )}
 
           {view === "customize" && (
             <div>
-              <div>
-                {data.map((item, index) => (
-                  <div
-                    key={index}
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, index)}
-                    onDragOver={allowDrop}
-                    onDrop={(e) => handleDrop(e, index)}
-                    className="bg-white p-4 mb-2 shadow rounded-md flex items-center justify-between"
-                  >
-                    <div className="flex items-center">
-                      <div className="mr-2 cursor-pointer">&#9776;</div>
-                      <div>
-                        <p>环节名称: {item.title}</p>
-                        <p>时长: {item.duration}秒</p>
-                        <p>双方环节: {item.isDualTimer ? "是" : "否"}</p>
-                      </div>
+              {data.map((item, index) => (
+                <div
+                  key={index}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, index)}
+                  onDragOver={allowDrop}
+                  onDrop={(e) => handleDrop(e, index)}
+                  className="bg-white p-4 mb-2 shadow rounded-md flex items-center justify-between"
+                >
+                  <div className="flex items-center">
+                    <div className="mr-2 cursor-pointer">&#9776;</div>
+                    <div>
+                      <p>环节名称: {item.title}</p>
+                      <p>时长: {item.duration}秒</p>
+                      <p>双方环节: {item.isDualTimer ? "是" : "否"}</p>
                     </div>
-                    <button
-                      onClick={() => handleDelete(index)}
-                      className="ml-4 px-2 py-1 bg-red-500 text-white rounded"
-                    >
-                      删除
-                    </button>
                   </div>
-                ))}
-              </div>
+                  <button
+                    onClick={() => handleDelete(index)}
+                    className="ml-4 px-2 py-1 bg-red-500 text-white rounded"
+                  >
+                    删除
+                  </button>
+                </div>
+              ))}
             </div>
           )}
         </div>
 
-        <div className="absolute bottom-0 right-0 p-4 bg-white w-full flex justify-end">
-          {view === "upload" && (
+        {view === "customize" && (
+          <div className="absolute bottom-0 right-0 p-4 bg-white w-full flex justify-end">
             <button
               className="px-4 py-2 bg-blue-500 text-white rounded mr-2"
-              onClick={() => setIsConfigOpen(true)} // Open Config when clicked
+              onClick={() => setIsAddModalOpen(true)}
             >
-              Customize Shortcuts
+              新增环节
             </button>
-          )}
-          {view === "customize" && (
-            <>
-              <button
-                className="px-4 py-2 bg-blue-500 text-white rounded mr-2"
-                onClick={() => setIsAddModalOpen(true)}
-              >
-                Add
-              </button>
-              <button
-                className="px-4 py-2 bg-green-500 text-white rounded"
-                onClick={handleSave}
-              >
-                Save as JSON
-              </button>
-            </>
-          )}
-        </div>
+            <button
+              className="px-4 py-2 bg-green-500 text-white rounded"
+              onClick={handleSave}
+            >
+              保存
+            </button>
+          </div>
+        )}
 
         {isAddModalOpen && (
           <AddModal setIsModalOpen={setIsAddModalOpen} setData={setData} />
@@ -226,4 +209,3 @@ Modal.propTypes = {
 };
 
 export default Modal;
-
