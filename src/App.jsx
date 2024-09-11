@@ -4,6 +4,7 @@ import { useState } from "react";
 import Screen from "./components/Screen";
 import Modal from "./components/rules/Modal";
 
+// Add the cog icon to the library
 library.add(faCog);
 
 function App() {
@@ -20,7 +21,7 @@ function App() {
     {
       title: "请选择赛制",
       isDualTimer: false,
-      duration: 30,
+      duration: 1,
     },
   ]);
   const [currentSessionIndex, setCurrentSessionIndex] = useState(0);

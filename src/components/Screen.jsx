@@ -52,7 +52,7 @@ function Screen({ config, session, onPreviousSession, onNextSession, setIsModalO
     <div className="w-screen h-screen flex flex-col justify-center">
       <div className="absolute top-4 right-4">
         <button onClick={() => setIsModalOpen(true)}>
-          <FontAwesomeIcon icon="cog" className="text-gray-50 hover:text-gray-800 transition-colors text-3xl" />
+          <FontAwesomeIcon icon="cog" className="text-gray-400 hover:text-gray-800 transition-colors text-3xl" />
         </button>
       </div>
 
