@@ -1,5 +1,10 @@
 [
   {
+    "title": "封面",
+    "duration": 0,
+    "isDualTimer": false
+  },
+  {
     "title": "正方一辩 · 立论",
     "duration": 240,
     "isDualTimer": false

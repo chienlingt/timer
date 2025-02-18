@@ -24,6 +24,7 @@ function App() {
       duration: 1,
     },
   ]);
+  
   const [currentSessionIndex, setCurrentSessionIndex] = useState(0);
   const [key, setKey] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);

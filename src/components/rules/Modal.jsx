@@ -14,6 +14,22 @@ const Modal = ({ isOpen, onClose, setSessions }) => {
 
   const containerRef = useRef(null);
 
+  const [settings, setSettings] = useState({
+    coverBackground: 'src/assets/计时器封面画面-02.png',
+    defaultBackground: 'src/assets/计时器待机画面-02.png',
+    positiveColor: '#0230FA', // Default blue for 正
+    negativeColor: '#A3FA01', // Default red for 反
+    fontStyle: 'font-sans', // Default font style
+  });
+  
+  const handleSettingsChange = (field, value) => {
+    setSettings((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+  
+
   const onDrop = (acceptedFiles) => {
     processJsonFile(
       acceptedFiles,
@@ -73,11 +89,16 @@ const Modal = ({ isOpen, onClose, setSessions }) => {
     if (container) {
       const { clientY } = e;
       const { top, bottom } = container.getBoundingClientRect();
+      const scrollSpeed = 2;
 
-      if (clientY < top + 50) {
-        container.scrollBy(0, -10);
-      } else if (clientY > bottom - 50) {
-        container.scrollBy(0, 10);
+      // Scroll up when near the top
+    if (clientY < top + 50) {
+      container.scrollBy(0, -scrollSpeed);
+    }
+
+    // Scroll down when near the bottom
+    if (clientY > bottom - 500) {
+      container.scrollBy(0, scrollSpeed);
       }
     }
   };
@@ -124,7 +145,13 @@ const Modal = ({ isOpen, onClose, setSessions }) => {
             className={`px-4 py-2 ${view === "customize" ? "bg-blue-500" : "bg-gray-300"} text-white rounded ml-2`}
             onClick={() => setView("customize")}
           >
-            新创赛制
+            编辑赛制
+          </button>
+          <button
+            className={`px-4 py-2 ${view === "setting" ? "bg-blue-500" : "bg-gray-300"} text-white rounded ml-2`}
+            onClick={() => setView("setting")}
+          >
+            自定义设置
           </button>
         </div>
 
@@ -147,7 +174,7 @@ const Modal = ({ isOpen, onClose, setSessions }) => {
           )}
 
           {view === "customize" && (
-            <div>
+            <div className="flex-1 overflow-y-auto pb-20" ref={containerRef} onDragOver={allowDrop}>
               {data.map((item, index) => (
                 <div
                   key={index}
@@ -173,26 +200,122 @@ const Modal = ({ isOpen, onClose, setSessions }) => {
                   </button>
                 </div>
               ))}
-            </div>
-          )}
-        </div>
 
-        {view === "customize" && (
-          <div className="absolute bottom-0 right-0 p-4 bg-white w-full flex justify-end">
-            <button
-              className="px-4 py-2 bg-blue-500 text-white rounded mr-2"
-              onClick={() => setIsAddModalOpen(true)}
-            >
-              新增环节
-            </button>
-            <button
-              className="px-4 py-2 bg-green-500 text-white rounded"
-              onClick={handleSave}
-            >
-              保存
-            </button>
+
+            <div className="absolute bottom-0 right-0 bg-white p-4 w-full flex justify-end">
+              <button
+                className="px-4 py-2 bg-blue-500 text-white rounded mr-2"
+                onClick={() => setIsAddModalOpen(true)}
+              >
+                新增环节
+              </button>
+              <button
+                className="px-4 py-2 bg-green-500 text-white rounded"
+                onClick={handleSave}
+              >
+                保存
+              </button>
+            </div>
+          </div>  
+          )}
+
+        {view === "setting" && (
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold">自定义设置</h2>
+            <div>
+              <label className="block text-gray-700">封面背景:</label>
+              <input
+                type="file"
+                accept="image/*"
+                className="w-57 border rounded p-2"
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                      handleSettingsChange('coverBackground', event.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }}
+              />
+              {settings.coverBackground && (
+                <img
+                  src={settings.coverBackground}
+                  alt="封面背景预览"
+                  className="mt-2 w-57 h-32 object-cover rounded"
+                />
+              )}
+            </div>
+
+            <div>
+              <label className="block text-gray-700">默认背景:</label>
+              <input
+                type="file"
+                accept="image/*"
+                className="w-57 border rounded p-2"
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                      handleSettingsChange('defaultBackground', event.target.result);
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }}
+              />
+              {settings.defaultBackground && (
+                <img
+                  src={settings.defaultBackground}
+                  alt="默认背景预览"
+                  className="mt-2 w-57 h-32 object-cover rounded"
+                />
+              )}
+            </div>
+
+            <div>
+              <label className="block text-gray-700">正方颜色:</label>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="color"
+                  className="border rounded p-2 cursor-pointer"
+                  value={settings.positiveColor}
+                  onChange={(e) => handleSettingsChange('positiveColor', e.target.value)}
+                  style={{ backgroundColor: settings.positiveColor }}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-gray-700">反方颜色:</label>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="color"
+                  className="border rounded p-2 "
+                  value={settings.negativeColor}
+                  onChange={(e) => handleSettingsChange('negativeColor', e.target.value)}
+                  style={{ backgroundColor: settings.negativeColor }}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-gray-700">字体样式:</label>
+              <select
+                className="w-full border rounded p-2"
+                value={settings.fontStyle}
+                onChange={(e) => handleSettingsChange('fontStyle', e.target.value)}
+              >
+                <option value="font-sans">无衬线 (Sans)</option>
+                <option value="font-serif">衬线 (Serif)</option>
+                <option value="font-mono">等宽 (Monospace)</option>
+              </select>
+            </div>
           </div>
         )}
+
+        </div>
 
         {isAddModalOpen && (
           <AddModal setIsModalOpen={setIsAddModalOpen} setData={setData} />

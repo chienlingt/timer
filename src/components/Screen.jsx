@@ -48,46 +48,67 @@ function Screen({ config, session, onPreviousSession, onNextSession, setIsModalO
     ? "text-red-500"
     : "text-gray-800";
 
-  return (
-    <div className="w-screen h-screen flex flex-col justify-center">
-      <div className="absolute top-4 right-4">
-        <button onClick={() => setIsModalOpen(true)}>
-          <FontAwesomeIcon icon="cog" className="text-gray-400 hover:text-gray-800 transition-colors text-3xl" />
-        </button>
-      </div>
-
-      <div className="text-center mb-6">
-        <h1 className={`text-[1.5rem] md:text-[2rem] lg:text-[3rem] xl:text-[3rem] font-bold ${titleColor}`}>
-          {session.title}
-        </h1>
-      </div>
-
-      <div className="flex justify-center">
-        <Timer
-          key="Primary"
-          minutes={primaryMinutes}
-          seconds={primarySeconds}
-          label={session.isDualTimer ? session.label1 : ""}
-          isActive={session.isDualTimer ? isPrimaryRunning && !isSecondaryRunning : isPrimaryRunning}
-          idleStyle={session.isDualTimer ? "text-slate-400" : timerIdleColor}
-          activeStyle={session.isDualTimer ? "text-blue-500" : timerActiveColor}
-        />
-        {session.isDualTimer && (
-          <Timer
-            key="Secondary"
-            minutes={secondaryMinutes}
-            seconds={secondarySeconds}
-            label={session.label2}
-            isActive={!isPrimaryRunning && isSecondaryRunning}
-            idleStyle="text-slate-400"
-            activeStyle="text-red-500"
-          />
+    return (
+      <div
+        className={`w-screen h-screen flex flex-col justify-center bg-cover bg-center`}
+        style={{
+          backgroundImage:
+            session.title === "封面" ? 'url("src/assets/计时器封面画面-02.png")' : 'url("src/assets/计时器待机画面-02.png")',
+        }}
+      >
+        <div className="absolute top-4 right-4">
+          <button onClick={() => setIsModalOpen(true)}>
+            <FontAwesomeIcon icon="cog" className="text-gray-400 hover:text-gray-800 transition-colors text-3xl" />
+          </button>
+        </div>
+    
+        {session.title !== "封面" && (
+          <>
+            <div className="text-center mb-6">
+              <h1
+                className={`text-[1.5rem] md:text-[2rem] lg:text-[3rem] xl:text-[3rem] font-bold ${titleColor}`}
+              >
+                {session.title}
+              </h1>
+            </div>
+    
+            <div className="flex justify-center">
+              <Timer
+                key="Primary"
+                minutes={primaryMinutes}
+                seconds={primarySeconds}
+                label={session.isDualTimer ? session.label1 : ""}
+                isActive={
+                  session.isDualTimer
+                    ? isPrimaryRunning && !isSecondaryRunning
+                    : isPrimaryRunning
+                }
+                idleStyle={
+                  session.isDualTimer ? "text-slate-400" : timerIdleColor
+                }
+                activeStyle={
+                  session.isDualTimer ? "text-blue-500" : timerActiveColor
+                }
+              />
+              {session.isDualTimer && (
+                <Timer
+                  key="Secondary"
+                  minutes={secondaryMinutes}
+                  seconds={secondarySeconds}
+                  label={session.label2}
+                  isActive={!isPrimaryRunning && isSecondaryRunning}
+                  idleStyle="text-slate-400"
+                  activeStyle="text-red-500"
+                />
+              )}
+            </div>
+          </>
         )}
+    
+        {isPaused && <PauseModal isOpen={isPaused} onClose={pauseTimers} />}
       </div>
-
-      {isPaused && <PauseModal isOpen={isPaused} onClose={pauseTimers} />}
-    </div>
-  );
+    );
+    
 }
 
 Screen.propTypes = {
