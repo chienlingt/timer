@@ -24,6 +24,15 @@ function App() {
       duration: 1,
     },
   ]);
+
+  // Use Tailwind compatible RGB values instead of hex codes
+  const [settings, setSettings] = useState({
+    coverBackground: 'src/assets/计时器封面画面-02.png',
+    defaultBackground: 'src/assets/计时器待机画面-02.png',
+    positiveColor: 'rgb(59, 130, 246)', // Tailwind blue-500
+    negativeColor: 'rgb(132, 204, 22)', // Tailwind lime-500
+    fontStyle: 'font-sans', // Default font style
+  });
   
   const [currentSessionIndex, setCurrentSessionIndex] = useState(0);
   const [key, setKey] = useState(0);
@@ -58,12 +67,15 @@ function App() {
         onPreviousSession={handlePreviousSession}
         onNextSession={handleNextSession}
         setIsModalOpen={setIsModalOpen}
+        settings={settings}
       />
 
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        setSessions={setSessions} // Pass setSessions to Modal
+        setSessions={setSessions} 
+        settings={settings}
+        setSettings={setSettings}
       />
     </div>
   );

@@ -4,7 +4,7 @@ import { useDropzone } from "react-dropzone";
 import AddModal from "./AddRecord/AddModal";
 import { processJsonFile } from "./jsonHandler";
 
-const Modal = ({ isOpen, onClose, setSessions }) => {
+const Modal = ({ isOpen, onClose, setSessions, settings, setSettings }) => {
   const [jsonFile, setJsonFile] = useState(null);
   const [data, setData] = useState([]);
   const [showError, setShowError] = useState(false);
@@ -14,14 +14,27 @@ const Modal = ({ isOpen, onClose, setSessions }) => {
 
   const containerRef = useRef(null);
 
-  const [settings, setSettings] = useState({
-    coverBackground: 'src/assets/计时器封面画面-02.png',
-    defaultBackground: 'src/assets/计时器待机画面-02.png',
-    positiveColor: '#0230FA', // Default blue for 正
-    negativeColor: '#A3FA01', // Default red for 反
-    fontStyle: 'font-sans', // Default font style
-  });
-  
+  // Tailwind color palette options
+  const colorOptions = [
+    { name: "Red", value: "rgb(239, 68, 68)", class: "bg-red-500" },
+    { name: "Orange", value: "rgb(249, 115, 22)", class: "bg-orange-500" },
+    { name: "Amber", value: "rgb(245, 158, 11)", class: "bg-amber-500" },
+    { name: "Yellow", value: "rgb(234, 179, 8)", class: "bg-yellow-500" },
+    { name: "Lime", value: "rgb(132, 204, 22)", class: "bg-lime-500" },
+    { name: "Green", value: "rgb(34, 197, 94)", class: "bg-green-500" },
+    { name: "Emerald", value: "rgb(16, 185, 129)", class: "bg-emerald-500" },
+    { name: "Teal", value: "rgb(20, 184, 166)", class: "bg-teal-500" },
+    { name: "Cyan", value: "rgb(6, 182, 212)", class: "bg-cyan-500" },
+    { name: "Sky", value: "rgb(14, 165, 233)", class: "bg-sky-500" },
+    { name: "Blue", value: "rgb(59, 130, 246)", class: "bg-blue-500" },
+    { name: "Indigo", value: "rgb(99, 102, 241)", class: "bg-indigo-500" },
+    { name: "Violet", value: "rgb(139, 92, 246)", class: "bg-violet-500" },
+    { name: "Purple", value: "rgb(168, 85, 247)", class: "bg-purple-500" },
+    { name: "Fuchsia", value: "rgb(217, 70, 239)", class: "bg-fuchsia-500" },
+    { name: "Pink", value: "rgb(236, 72, 153)", class: "bg-pink-500" },
+    { name: "Rose", value: "rgb(244, 63, 94)", class: "bg-rose-500" },
+  ];
+
   const handleSettingsChange = (field, value) => {
     setSettings((prev) => ({
       ...prev,
@@ -29,7 +42,6 @@ const Modal = ({ isOpen, onClose, setSessions }) => {
     }));
   };
   
-
   const onDrop = (acceptedFiles) => {
     processJsonFile(
       acceptedFiles,
@@ -219,102 +231,127 @@ const Modal = ({ isOpen, onClose, setSessions }) => {
           </div>  
           )}
 
-        {view === "setting" && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold">自定义设置</h2>
-            <div>
-              <label className="block text-gray-700">封面背景:</label>
-              <input
-                type="file"
-                accept="image/*"
-                className="w-57 border rounded p-2"
-                onChange={(e) => {
-                  const file = e.target.files[0];
-                  if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                      handleSettingsChange('coverBackground', event.target.result);
-                    };
-                    reader.readAsDataURL(file);
-                  }
-                }}
-              />
-              {settings.coverBackground && (
-                <img
-                  src={settings.coverBackground}
-                  alt="封面背景预览"
-                  className="mt-2 w-57 h-32 object-cover rounded"
-                />
-              )}
-            </div>
-
-            <div>
-              <label className="block text-gray-700">默认背景:</label>
-              <input
-                type="file"
-                accept="image/*"
-                className="w-57 border rounded p-2"
-                onChange={(e) => {
-                  const file = e.target.files[0];
-                  if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                      handleSettingsChange('defaultBackground', event.target.result);
-                    };
-                    reader.readAsDataURL(file);
-                  }
-                }}
-              />
-              {settings.defaultBackground && (
-                <img
-                  src={settings.defaultBackground}
-                  alt="默认背景预览"
-                  className="mt-2 w-57 h-32 object-cover rounded"
-                />
-              )}
-            </div>
-
-            <div>
-              <label className="block text-gray-700">正方颜色:</label>
-              <div className="flex items-center space-x-2">
+          {view === "setting" && (
+            <div className="space-y-6">
+              <h2 className="text-xl font-bold">自定义设置</h2>
+              
+              {/* Image upload sections */}
+              <div>
+                <label className="block text-gray-700 mb-2">封面背景:</label>
                 <input
-                  type="color"
-                  className="border rounded p-2 cursor-pointer"
-                  value={settings.positiveColor}
-                  onChange={(e) => handleSettingsChange('positiveColor', e.target.value)}
-                  style={{ backgroundColor: settings.positiveColor }}
+                  type="file"
+                  accept="image/*"
+                  className="w-57 border rounded p-2"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (event) => {
+                        handleSettingsChange('coverBackground', event.target.result);
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
                 />
+                {settings.coverBackground && (
+                  <img
+                    src={settings.coverBackground}
+                    alt="封面背景预览"
+                    className="mt-2 w-57 h-32 object-cover rounded"
+                  />
+                )}
+              </div>
+
+              <div>
+                <label className="block text-gray-700 mb-2">默认背景:</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="w-57 border rounded p-2"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (event) => {
+                        handleSettingsChange('defaultBackground', event.target.result);
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                />
+                {settings.defaultBackground && (
+                  <img
+                    src={settings.defaultBackground}
+                    alt="默认背景预览"
+                    className="mt-2 w-57 h-32 object-cover rounded"
+                  />
+                )}
+              </div>
+
+              {/* Color selection sections with Tailwind colors */}
+              <div>
+                <label className="block text-gray-700 mb-2">正方颜色:</label>
+                <div className="grid grid-cols-9 gap-2">
+                  {colorOptions.map((color) => (
+                    <div 
+                      key={`positive-${color.name}`}
+                      className={`w-full h-10 ${color.class} rounded cursor-pointer transition-all border-4 ${settings.positiveColor === color.value ? 'border-black' : 'border-transparent'}`}
+                      onClick={() => handleSettingsChange('positiveColor', color.value)}
+                      title={color.name}
+                    />
+                  ))}
+                </div>
+                {/* <div className="mt-2 flex items-center">
+                  <div className="w-6 h-6 rounded mr-2" style={{ backgroundColor: settings.positiveColor }}></div>
+                  <span className="text-sm">已选择的颜色</span>
+                </div> */}
+              </div>
+
+              <div>
+                <label className="block text-gray-700 mb-2">反方颜色:</label>
+                <div className="grid grid-cols-9 gap-2">
+                  {colorOptions.map((color) => (
+                    <div 
+                      key={`negative-${color.name}`}
+                      className={`w-full h-10 ${color.class} rounded cursor-pointer transition-all border-4 ${settings.negativeColor === color.value ? 'border-black' : 'border-transparent'}`}
+                      onClick={() => handleSettingsChange('negativeColor', color.value)}
+                      title={color.name}
+                    />
+                  ))}
+                </div>
+                {/* <div className="mt-2 flex items-center">
+                  <div className="w-6 h-6 rounded mr-2" style={{ backgroundColor: settings.negativeColor }}></div>
+                  <span className="text-sm">已选择的颜色</span>
+                </div> */}
+              </div>
+
+              {/* Font style selection */}
+              <div>
+                <label className="block text-gray-700 mb-2">字体样式:</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <div 
+                    className={`font-sans border rounded p-3 text-center cursor-pointer ${settings.fontStyle === 'font-sans' ? 'bg-blue-100 border-blue-500' : 'border-gray-300'}`}
+                    onClick={() => handleSettingsChange('fontStyle', 'font-sans')}
+                  >
+                    无衬线 (Sans)
+                  </div>
+                  <div 
+                    className={`font-serif border rounded p-3 text-center cursor-pointer ${settings.fontStyle === 'font-serif' ? 'bg-blue-100 border-blue-500' : 'border-gray-300'}`}
+                    onClick={() => handleSettingsChange('fontStyle', 'font-serif')}
+                  >
+                    衬线 (Serif)
+                  </div>
+                  <div 
+                    className={`font-mono border rounded p-3 text-center cursor-pointer ${settings.fontStyle === 'font-mono' ? 'bg-blue-100 border-blue-500' : 'border-gray-300'}`}
+                    onClick={() => handleSettingsChange('fontStyle', 'font-mono')}
+                  >
+                    等宽 (Mono)
+                  </div>
+                </div>
+                <div className={`mt-4 text-xl ${settings.fontStyle}`}>预览文字 / Preview Text / 0123456789</div>
               </div>
             </div>
-
-            <div>
-              <label className="block text-gray-700">反方颜色:</label>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="color"
-                  className="border rounded p-2 "
-                  value={settings.negativeColor}
-                  onChange={(e) => handleSettingsChange('negativeColor', e.target.value)}
-                  style={{ backgroundColor: settings.negativeColor }}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-gray-700">字体样式:</label>
-              <select
-                className="w-full border rounded p-2"
-                value={settings.fontStyle}
-                onChange={(e) => handleSettingsChange('fontStyle', e.target.value)}
-              >
-                <option value="font-sans">无衬线 (Sans)</option>
-                <option value="font-serif">衬线 (Serif)</option>
-                <option value="font-mono">等宽 (Monospace)</option>
-              </select>
-            </div>
-          </div>
-        )}
-
+          )}
         </div>
 
         {isAddModalOpen && (
@@ -329,6 +366,8 @@ Modal.propTypes = {
   isOpen: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   setSessions: PropTypes.func.isRequired,
+  settings: PropTypes.object.isRequired,
+  setSettings: PropTypes.func.isRequired,
 };
 
 export default Modal;

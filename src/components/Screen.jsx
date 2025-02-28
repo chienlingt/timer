@@ -6,7 +6,7 @@ import useKeyboardShortcut from "../hooks/utils/useKeyboardShortcut";
 import Timer from "./Timer";
 import PauseModal from "./modals/PauseModal";
 
-function Screen({ config, session, onPreviousSession, onNextSession, setIsModalOpen }) {
+function Screen({ config, session, onPreviousSession, onNextSession, setIsModalOpen, settings }) {
   const [isPaused, setIsPaused] = useState(false);
 
   const {
@@ -32,83 +32,109 @@ function Screen({ config, session, onPreviousSession, onNextSession, setIsModalO
   useKeyboardShortcut(config.previousSession, onPreviousSession);
   useKeyboardShortcut(config.nextSession, onNextSession);
 
-  const titleColor = session.isDualTimer
-    ? "text-blue-900"
-    : session.title.includes("正")
-    ? "text-blue-500"
-    : session.title.includes("反")
-    ? "text-red-500"
-    : "text-gray-800";
+  // Get title style for non-dual timers
+  const getTitleStyle = () => {
+    if (session.isDualTimer) return { color: "white" };
+    
+    if (session.title.includes("正")) {
+      return { color: settings.positiveColor };
+    }
+    if (session.title.includes("反")) {
+      return { color: settings.negativeColor };
+    }
+    return { color: "white" };
+  };
 
-  const timerIdleColor = "text-slate-400";
+  // Render title with colored parts for dual timers
+  const renderTitle = () => {
+    if (!session.isDualTimer) {
+      return session.title;
+    }
 
-  const timerActiveColor = session.title.includes("正")
-    ? "text-blue-500"
-    : session.title.includes("反")
-    ? "text-red-500"
-    : "text-gray-800";
-
+    // For dual timer sessions, colorize the specific terms
     return (
-      <div
-        className={`w-screen h-screen flex flex-col justify-center bg-cover bg-center`}
-        style={{
-          backgroundImage:
-            session.title === "封面" ? 'url("src/assets/计时器封面画面-02.png")' : 'url("src/assets/计时器待机画面-02.png")',
-        }}
-      >
-        <div className="absolute top-4 right-4">
-          <button onClick={() => setIsModalOpen(true)}>
-            <FontAwesomeIcon icon="cog" className="text-gray-400 hover:text-gray-800 transition-colors text-3xl" />
-          </button>
-        </div>
-    
-        {session.title !== "封面" && (
-          <>
-            <div className="text-center mb-6">
-              <h1
-                className={`text-[1.5rem] md:text-[2rem] lg:text-[3rem] xl:text-[3rem] font-bold ${titleColor}`}
-              >
-                {session.title}
-              </h1>
-            </div>
-    
-            <div className="flex justify-center">
-              <Timer
-                key="Primary"
-                minutes={primaryMinutes}
-                seconds={primarySeconds}
-                label={session.isDualTimer ? session.label1 : ""}
-                isActive={
-                  session.isDualTimer
-                    ? isPrimaryRunning && !isSecondaryRunning
-                    : isPrimaryRunning
-                }
-                idleStyle={
-                  session.isDualTimer ? "text-slate-400" : timerIdleColor
-                }
-                activeStyle={
-                  session.isDualTimer ? "text-blue-500" : timerActiveColor
-                }
-              />
-              {session.isDualTimer && (
-                <Timer
-                  key="Secondary"
-                  minutes={secondaryMinutes}
-                  seconds={secondarySeconds}
-                  label={session.label2}
-                  isActive={!isPrimaryRunning && isSecondaryRunning}
-                  idleStyle="text-slate-400"
-                  activeStyle="text-red-500"
-                />
-              )}
-            </div>
-          </>
-        )}
-    
-        {isPaused && <PauseModal isOpen={isPaused} onClose={pauseTimers} />}
-      </div>
+      <>
+        {session.title.split(/(正方|反方)/).map((part, index) => {
+          if (part === "正方") {
+            return (
+              <span key={index} style={{ color: settings.positiveColor }}>
+                {part}
+              </span>
+            );
+          } else if (part === "反方") {
+            return (
+              <span key={index} style={{ color: settings.negativeColor }}>
+                {part}
+              </span>
+            );
+          }
+          return part;
+        })}
+      </>
     );
-    
+  };
+
+  return (
+    <div
+      className={`w-screen h-screen flex flex-col justify-center bg-cover bg-center ${settings.fontStyle}`}
+      style={{
+        backgroundImage:
+          session.title === "封面" ? `url("${settings.coverBackground}")` : `url("${settings.defaultBackground}")`,
+      }}
+    >
+      <div className="absolute top-4 right-4">
+        <button onClick={() => setIsModalOpen(true)}>
+          <FontAwesomeIcon icon="cog" className="text-gray-400 hover:text-gray-800 transition-colors text-3xl" />
+        </button>
+      </div>
+  
+      {session.title !== "封面" && (
+        <>
+          <div className="text-center mb-6">
+            <h1
+              className="text-[1.5rem] md:text-[2rem] lg:text-[3rem] xl:text-[3rem] font-bold"
+              style={getTitleStyle()}
+            >
+              {renderTitle()}
+            </h1>
+          </div>
+  
+          <div className="flex justify-center">
+            <Timer
+              key="Primary"
+              minutes={primaryMinutes}
+              seconds={primarySeconds}
+              label={session.isDualTimer ? session.label1 : ""}
+              isActive={
+                session.isDualTimer
+                  ? isPrimaryRunning && !isSecondaryRunning
+                  : isPrimaryRunning
+              }
+              idleStyle="text-slate-400"
+              activeStyle={session.title.includes("反") ? settings.negativeColor : settings.positiveColor}
+              settings={settings}
+              labelStyle={session.isDualTimer ? { color: settings.positiveColor } : {}}
+            />
+            {session.isDualTimer && (
+              <Timer
+                key="Secondary"
+                minutes={secondaryMinutes}
+                seconds={secondarySeconds}
+                label={session.label2}
+                isActive={!isPrimaryRunning && isSecondaryRunning}
+                idleStyle="text-slate-400"
+                activeStyle={settings.negativeColor}
+                settings={settings}
+                labelStyle={{ color: settings.negativeColor }}
+              />
+            )}
+          </div>
+        </>
+      )}
+  
+      {isPaused && <PauseModal isOpen={isPaused} onClose={pauseTimers} />}
+    </div>
+  );
 }
 
 Screen.propTypes = {
@@ -130,6 +156,7 @@ Screen.propTypes = {
   onPreviousSession: PropTypes.func.isRequired,
   onNextSession: PropTypes.func.isRequired,
   setIsModalOpen: PropTypes.func.isRequired,
+  settings: PropTypes.object.isRequired,
 };
 
 export default Screen;
