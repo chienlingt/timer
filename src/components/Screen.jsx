@@ -78,9 +78,12 @@ function Screen({ config, session, onPreviousSession, onNextSession, setIsModalO
     <div
       className={`w-screen h-screen flex flex-col justify-center bg-cover bg-center ${settings.fontStyle}`}
       style={{
-        backgroundImage:
-          session.title === "封面" ? `url("${settings.coverBackground}")` : `url("${settings.defaultBackground}")`,
+        backgroundImage: session.title === "封面" 
+          ? `url("${settings.coverBackground}")` 
+          : `url("${settings.defaultBackground}")`,
+        fontFamily: settings.customFontFamily || 'inherit'
       }}
+    
     >
       <div className="absolute top-4 right-4">
         <button onClick={() => setIsModalOpen(true)}>

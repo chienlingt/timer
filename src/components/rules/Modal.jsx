@@ -325,31 +325,44 @@ const Modal = ({ isOpen, onClose, setSessions, settings, setSettings }) => {
                 </div> */}
               </div>
 
-              {/* Font style selection */}
-              <div>
-                <label className="block text-gray-700 mb-2">字体样式:</label>
-                <div className="grid grid-cols-3 gap-2">
-                  <div 
-                    className={`font-sans border rounded p-3 text-center cursor-pointer ${settings.fontStyle === 'font-sans' ? 'bg-blue-100 border-blue-500' : 'border-gray-300'}`}
-                    onClick={() => handleSettingsChange('fontStyle', 'font-sans')}
-                  >
-                    无衬线 (Sans)
-                  </div>
-                  <div 
-                    className={`font-serif border rounded p-3 text-center cursor-pointer ${settings.fontStyle === 'font-serif' ? 'bg-blue-100 border-blue-500' : 'border-gray-300'}`}
-                    onClick={() => handleSettingsChange('fontStyle', 'font-serif')}
-                  >
-                    衬线 (Serif)
-                  </div>
-                  <div 
-                    className={`font-mono border rounded p-3 text-center cursor-pointer ${settings.fontStyle === 'font-mono' ? 'bg-blue-100 border-blue-500' : 'border-gray-300'}`}
-                    onClick={() => handleSettingsChange('fontStyle', 'font-mono')}
-                  >
-                    等宽 (Mono)
-                  </div>
-                </div>
-                <div className={`mt-4 text-xl ${settings.fontStyle}`}>预览文字 / Preview Text / 0123456789</div>
+            <div>
+              <label className="block text-gray-700 mb-2">自定义字体:</label>
+              <input
+                type="file"
+                accept=".woff,.woff2,.ttf,.otf"
+                className="w-57 border rounded p-2"
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    // Create a URL for the font file
+                    const fontUrl = URL.createObjectURL(file);
+                    // Create a unique font family name
+                    const fontFamily = `custom-font-${Date.now()}`;
+                    
+                    // Dynamically add @font-face rule
+                    const style = document.createElement('style');
+                    style.textContent = `
+                      @font-face {
+                        font-family: '${fontFamily}';
+                        src: url('${fontUrl}') format('${getFormat(file.name)}');
+                        font-weight: normal;
+                        font-style: normal;
+                      }
+                    `;
+                    document.head.appendChild(style);
+                    
+                    // Update settings
+                    handleSettingsChange('customFontFamily', fontFamily);
+                  }
+                }}
+              />
+              <div className={`mt-4 text-xl`} 
+                  style={{fontFamily: settings.customFontFamily || 'inherit'}}>
+                预览文字 / Preview Text / 0123456789
               </div>
+            </div>
+
+            
             </div>
           )}
         </div>
@@ -361,6 +374,14 @@ const Modal = ({ isOpen, onClose, setSessions, settings, setSettings }) => {
     </div>
   );
 };
+
+function getFormat(filename) {
+  if (filename.endsWith('.woff2')) return 'woff2';
+  if (filename.endsWith('.woff')) return 'woff';
+  if (filename.endsWith('.ttf')) return 'truetype';
+  if (filename.endsWith('.otf')) return 'opentype';
+  return 'truetype'; // default
+}
 
 Modal.propTypes = {
   isOpen: PropTypes.bool.isRequired,
