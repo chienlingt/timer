@@ -45,6 +45,15 @@ function Screen({ config, session, onPreviousSession, onNextSession, setIsModalO
     return { color: "white" };
   };
 
+  // Get timer active style based on session type
+  const getTimerActiveStyle = () => {
+    if (session.title === "教练指导") {
+      return "text-white";
+    }
+    
+    return session.title.includes("反") ? settings.negativeColor : settings.positiveColor;
+  };
+
   // Render title with colored parts for dual timers
   const renderTitle = () => {
     if (!session.isDualTimer) {
@@ -114,7 +123,7 @@ function Screen({ config, session, onPreviousSession, onNextSession, setIsModalO
                   : isPrimaryRunning
               }
               idleStyle="text-slate-400"
-              activeStyle={session.title.includes("反") ? settings.negativeColor : settings.positiveColor}
+              activeStyle={getTimerActiveStyle()}
               settings={settings}
               labelStyle={session.isDualTimer ? { color: settings.positiveColor } : {}}
             />

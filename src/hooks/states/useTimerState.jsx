@@ -19,6 +19,13 @@ const useTimerState = (durationInSeconds) => {
     autoStart: false,
   });
 
+  // Fix: Check if timer is at or has passed expiry
+  const currentSeconds = minutes * 60 + seconds;
+  const hasTimeLeft = currentSeconds > 0;
+  
+  const displayMinutes = hasTimeLeft ? minutes : 0;
+  const displaySeconds = hasTimeLeft ? seconds : 0;
+
   const toggleRunning = useCallback(() => {
     if (isRunning) {
       pause();
@@ -33,8 +40,8 @@ const useTimerState = (durationInSeconds) => {
 
   return {
     isRunning,
-    seconds: seconds === 0 && minutes === 0 ? initialSeconds : seconds,
-    minutes: minutes === 0 ? initialMinutes : minutes,
+    seconds: displaySeconds,
+    minutes: displayMinutes,
     toggleRunning,
     pause,
     restart,
