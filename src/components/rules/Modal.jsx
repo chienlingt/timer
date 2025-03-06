@@ -4,6 +4,35 @@ import { useDropzone } from "react-dropzone";
 import AddModal from "./AddRecord/AddModal";
 import { processJsonFile } from "./jsonHandler";
 
+// Helper function to get permanent image URLs using a free image hosting service
+const uploadImageAndGetUrl = async (file) => {
+  // For a real implementation, you would use a service like Cloudinary, Firebase Storage, or similar
+  // This is a placeholder function to show the approach
+  
+  // Option 1: For testing, create object URL (which isn't permanent but works during the session)
+  return URL.createObjectURL(file);
+  
+  // Option 2: In production, you'd implement an upload to an image hosting service
+  // Example with FormData (you would replace with your actual upload endpoint)
+  /*
+  const formData = new FormData();
+  formData.append('image', file);
+  
+  try {
+    const response = await fetch('https://your-image-hosting-service.com/upload', {
+      method: 'POST',
+      body: formData,
+    });
+    
+    const data = await response.json();
+    return data.imageUrl; // The permanent URL returned by the service
+  } catch (error) {
+    console.error('Error uploading image:', error);
+    return null;
+  }
+  */
+};
+
 const Modal = ({ isOpen, onClose, setSessions, settings, setSettings }) => {
   const [jsonFile, setJsonFile] = useState(null);
   const [data, setData] = useState([]);
@@ -13,6 +42,27 @@ const Modal = ({ isOpen, onClose, setSessions, settings, setSettings }) => {
   const [view, setView] = useState("upload");
 
   const containerRef = useRef(null);
+
+  // Load data from localStorage when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      const savedData = localStorage.getItem('debateTimerCustomData');
+      if (savedData) {
+        try {
+          setData(JSON.parse(savedData));
+        } catch (error) {
+          console.error("Error parsing saved data:", error);
+        }
+      }
+    }
+  }, [isOpen]);
+
+  // Save data to localStorage when it changes
+  useEffect(() => {
+    if (data.length > 0) {
+      localStorage.setItem('debateTimerCustomData', JSON.stringify(data));
+    }
+  }, [data]);
 
   // Tailwind color palette options
   const colorOptions = [
@@ -35,11 +85,39 @@ const Modal = ({ isOpen, onClose, setSessions, settings, setSettings }) => {
     { name: "Rose", value: "rgb(244, 63, 94)", class: "bg-rose-400" },
   ];
 
-  const handleSettingsChange = (field, value) => {
-    setSettings((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+  const handleSettingsChange = async (field, value) => {
+    // For file uploads that need to be processed
+    if (field === 'coverBackground' || field === 'defaultBackground') {
+      // If value is a File object, process it
+      if (value instanceof File) {
+        try {
+          // Get a permanent URL for the image
+          const imageUrl = await uploadImageAndGetUrl(value);
+          
+          if (imageUrl) {
+            setSettings((prev) => ({
+              ...prev,
+              [field]: imageUrl,
+            }));
+          }
+        } catch (error) {
+          console.error(`Error processing ${field}:`, error);
+          // Handle error (show to user, etc.)
+        }
+      } else {
+        // If it's already a URL, just set it directly
+        setSettings((prev) => ({
+          ...prev,
+          [field]: value,
+        }));
+      }
+    } else {
+      // For other settings, just update directly
+      setSettings((prev) => ({
+        ...prev,
+        [field]: value,
+      }));
+    }
   };
   
   const onDrop = (acceptedFiles) => {
@@ -49,6 +127,7 @@ const Modal = ({ isOpen, onClose, setSessions, settings, setSettings }) => {
       (loadedData) => {
         setData(loadedData);
         setSessions(loadedData); // Update sessions in the App component
+        localStorage.setItem('debateTimerCustomData', JSON.stringify(loadedData));
       },
       setShowError,
       setErrorMessage
@@ -79,12 +158,19 @@ const Modal = ({ isOpen, onClose, setSessions, settings, setSettings }) => {
 
   const handleSave = () => {
     const formattedData = data.map(item => ({
-      title: item.环节名称,
-      isDualTimer: item.双方环节,
-      duration: item.时长
+      title: item.环节名称 || item.title,
+      isDualTimer: item.双方环节 || item.isDualTimer,
+      duration: item.时长 || item.duration
     }));
   
-    const fileName = window.prompt("Enter the file name:", "data.json");
+    // Save to localStorage
+    localStorage.setItem('debateTimerSessions', JSON.stringify(formattedData));
+    
+    // Also update the current sessions state
+    setSessions(formattedData);
+    
+    // Export to file if requested
+    const fileName = window.prompt("Enter the file name for export:", "data.json");
     if (fileName) {
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -134,6 +220,32 @@ const Modal = ({ isOpen, onClose, setSessions, settings, setSettings }) => {
       container.scrollTop = container.scrollHeight;
     }
   }, [data]);
+
+  // Load custom font if it exists in settings
+  useEffect(() => {
+    if (settings.customFontFamily && settings.customFontUrl) {
+      const fontFamily = settings.customFontFamily;
+      const fontUrl = settings.customFontUrl;
+      const format = settings.customFontFormat || 'truetype';
+      
+      // Add the font face to the document
+      const style = document.createElement('style');
+      style.textContent = `
+        @font-face {
+          font-family: '${fontFamily}';
+          src: url('${fontUrl}') format('${format}');
+          font-weight: normal;
+          font-style: normal;
+        }
+      `;
+      document.head.appendChild(style);
+      
+      return () => {
+        // Clean up when component unmounts
+        document.head.removeChild(style);
+      };
+    }
+  }, [settings.customFontFamily, settings.customFontUrl, settings.customFontFormat]);
 
   if (!isOpen) return null;
 
@@ -199,9 +311,9 @@ const Modal = ({ isOpen, onClose, setSessions, settings, setSettings }) => {
                   <div className="flex items-center">
                     <div className="mr-2 cursor-pointer">&#9776;</div>
                     <div>
-                      <p>环节名称: {item.title}</p>
-                      <p>时长: {item.duration}秒</p>
-                      <p>双方环节: {item.isDualTimer ? "是" : "否"}</p>
+                      <p>环节名称: {item.title || item.环节名称}</p>
+                      <p>时长: {item.duration || item.时长}秒</p>
+                      <p>双方环节: {(item.isDualTimer || item.双方环节) ? "是" : "否"}</p>
                     </div>
                   </div>
                   <button
@@ -237,22 +349,27 @@ const Modal = ({ isOpen, onClose, setSessions, settings, setSettings }) => {
               
               {/* Image upload sections */}
               <div>
-                <label className="block text-gray-700 mb-2">封面背景:</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="w-57 border rounded p-2"
-                  onChange={(e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onload = (event) => {
-                        handleSettingsChange('coverBackground', event.target.result);
-                      };
-                      reader.readAsDataURL(file);
-                    }
-                  }}
-                />
+                <label className="block text-gray-700 mb-2">封面背景URL:</label>
+                <div className="flex space-x-2">
+                  {/* <input
+                    type="text"
+                    className="w-full border rounded p-2"
+                    value={settings.coverBackground || ''}
+                    placeholder="Enter image URL or upload a file"
+                    onChange={(e) => handleSettingsChange('coverBackground', e.target.value)}
+                  /> */}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="w-57 border rounded p-2"
+                    onChange={async (e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        await handleSettingsChange('coverBackground', file);
+                      }
+                    }}
+                  />
+                </div>
                 {settings.coverBackground && (
                   <img
                     src={settings.coverBackground}
@@ -263,22 +380,27 @@ const Modal = ({ isOpen, onClose, setSessions, settings, setSettings }) => {
               </div>
 
               <div>
-                <label className="block text-gray-700 mb-2">默认背景:</label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="w-57 border rounded p-2"
-                  onChange={(e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onload = (event) => {
-                        handleSettingsChange('defaultBackground', event.target.result);
-                      };
-                      reader.readAsDataURL(file);
-                    }
-                  }}
-                />
+                <label className="block text-gray-700 mb-2">默认背景URL:</label>
+                <div className="flex space-x-2">
+                  {/* <input
+                    type="text"
+                    className="w-full border rounded p-2"
+                    value={settings.defaultBackground || ''}
+                    placeholder="Enter image URL or upload a file"
+                    onChange={(e) => handleSettingsChange('defaultBackground', e.target.value)}
+                  /> */}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="w-57 border rounded p-2"
+                    onChange={async (e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        await handleSettingsChange('defaultBackground', file);
+                      }
+                    }}
+                  />
+                </div>
                 {settings.defaultBackground && (
                   <img
                     src={settings.defaultBackground}
@@ -301,10 +423,6 @@ const Modal = ({ isOpen, onClose, setSessions, settings, setSettings }) => {
                     />
                   ))}
                 </div>
-                {/* <div className="mt-2 flex items-center">
-                  <div className="w-6 h-6 rounded mr-2" style={{ backgroundColor: settings.positiveColor }}></div>
-                  <span className="text-sm">已选择的颜色</span>
-                </div> */}
               </div>
 
               <div>
@@ -319,50 +437,57 @@ const Modal = ({ isOpen, onClose, setSessions, settings, setSettings }) => {
                     />
                   ))}
                 </div>
-                {/* <div className="mt-2 flex items-center">
-                  <div className="w-6 h-6 rounded mr-2" style={{ backgroundColor: settings.negativeColor }}></div>
-                  <span className="text-sm">已选择的颜色</span>
-                </div> */}
               </div>
 
-            <div>
-              <label className="block text-gray-700 mb-2">自定义字体:</label>
-              <input
-                type="file"
-                accept=".woff,.woff2,.ttf,.otf"
-                className="w-57 border rounded p-2"
-                onChange={(e) => {
-                  const file = e.target.files[0];
-                  if (file) {
-                    // Create a URL for the font file
-                    const fontUrl = URL.createObjectURL(file);
-                    // Create a unique font family name
-                    const fontFamily = `custom-font-${Date.now()}`;
-                    
-                    // Dynamically add @font-face rule
-                    const style = document.createElement('style');
-                    style.textContent = `
-                      @font-face {
-                        font-family: '${fontFamily}';
-                        src: url('${fontUrl}') format('${getFormat(file.name)}');
-                        font-weight: normal;
-                        font-style: normal;
+              <div>
+                <label className="block text-gray-700 mb-2">自定义字体:</label>
+                <input
+                  type="file"
+                  accept=".woff,.woff2,.ttf,.otf"
+                  className="w-57 border rounded p-2"
+                  onChange={async (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      try {
+                        // Upload font file to get permanent URL
+                        const fontUrl = await uploadImageAndGetUrl(file);
+                        
+                        // Create a unique font family name
+                        const fontFamily = `custom-font-${Date.now()}`;
+                        
+                        // Determine format from filename
+                        const format = getFormat(file.name);
+                        
+                        // Update settings with all font information
+                        setSettings(prev => ({
+                          ...prev,
+                          customFontFamily: fontFamily,
+                          customFontUrl: fontUrl,
+                          customFontFormat: format
+                        }));
+                        
+                        // Dynamically add @font-face rule
+                        const style = document.createElement('style');
+                        style.textContent = `
+                          @font-face {
+                            font-family: '${fontFamily}';
+                            src: url('${fontUrl}') format('${format}');
+                            font-weight: normal;
+                            font-style: normal;
+                          }
+                        `;
+                        document.head.appendChild(style);
+                      } catch (error) {
+                        console.error('Error processing font:', error);
                       }
-                    `;
-                    document.head.appendChild(style);
-                    
-                    // Update settings
-                    handleSettingsChange('customFontFamily', fontFamily);
-                  }
-                }}
-              />
-              <div className={`mt-4 text-xl`} 
-                  style={{fontFamily: settings.customFontFamily || 'inherit'}}>
-                预览文字 / Preview Text / 0123456789
+                    }
+                  }}
+                />
+                <div className={`mt-4 text-xl`} 
+                    style={{fontFamily: settings.customFontFamily || 'inherit'}}>
+                  预览文字 / Preview Text / 0123456789
+                </div>
               </div>
-            </div>
-
-            
             </div>
           )}
         </div>

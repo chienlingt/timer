@@ -17,13 +17,14 @@ function App() {
     nextSession: ".",
   };
 
-  const [sessions, setSessions] = useState([
+  // Initial default session
+  const defaultSessions = [
     {
       title: "请选择赛制",
       isDualTimer: false,
       duration: 1,
     }
-  ]);
+  ];
 
   const specialSessions = {
     "1": { 
@@ -38,10 +39,51 @@ function App() {
     }
   };
 
-  const [currentSessionIndex, setCurrentSessionIndex] = useState(0);
+  // Default settings
+  const defaultSettings = {
+    coverBackground: 'src/assets/计时器封面画面-02.png',
+    defaultBackground: 'src/assets/计时器待机画面-02.png',
+    positiveColor: 'rgb(59, 130, 246)', // Tailwind blue-500
+    negativeColor: 'rgb(132, 204, 22)', // Tailwind lime-500
+    fontStyle: 'font-sans', // Default font style
+    customFontFamily: ''
+  };
+
+  // Load sessions from localStorage or use default
+  const [sessions, setSessions] = useState(() => {
+    const savedSessions = localStorage.getItem('debateTimerSessions');
+    return savedSessions ? JSON.parse(savedSessions) : defaultSessions;
+  });
+
+  // Load settings from localStorage or use default
+  const [settings, setSettings] = useState(() => {
+    const savedSettings = localStorage.getItem('debateTimerSettings');
+    return savedSettings ? JSON.parse(savedSettings) : defaultSettings;
+  });
+
+  const [currentSessionIndex, setCurrentSessionIndex] = useState(() => {
+    const savedIndex = localStorage.getItem('debateTimerCurrentIndex');
+    return savedIndex ? parseInt(savedIndex, 10) : 0;
+  });
+  
   const [key, setKey] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [specialSessionContext, setSpecialSessionContext] = useState(null);
+
+  // Save sessions to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('debateTimerSessions', JSON.stringify(sessions));
+  }, [sessions]);
+
+  // Save current session index to localStorage
+  useEffect(() => {
+    localStorage.setItem('debateTimerCurrentIndex', currentSessionIndex.toString());
+  }, [currentSessionIndex]);
+
+  // Save settings to localStorage
+  useEffect(() => {
+    localStorage.setItem('debateTimerSettings', JSON.stringify(settings));
+  }, [settings]);
 
   // Customize keyboard shortcut for special sessions
   useEffect(() => {
@@ -85,14 +127,6 @@ function App() {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [specialSessionContext, sessions, currentSessionIndex]);
-  
-  const [settings, setSettings] = useState({
-    coverBackground: 'src/assets/计时器封面画面-02.png',
-    defaultBackground: 'src/assets/计时器待机画面-02.png',
-    positiveColor: 'rgb(59, 130, 246)', // Tailwind blue-500
-    negativeColor: 'rgb(132, 204, 22)', // Tailwind lime-500
-    fontStyle: 'font-sans', // Default font style
-  });
   
   // Disable previous/next session when in a special session
   const handlePreviousSession = () => {
