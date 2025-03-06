@@ -213,12 +213,20 @@ const Modal = ({ isOpen, onClose, setSessions, settings, setSettings }) => {
     }
   }, []);
 
+  const prevDataLength = useRef(data.length);
+
+  const prevDataLengthRef = useRef(data.length);
+
   useEffect(() => {
-    // Scroll to the bottom whenever data changes
     const container = containerRef.current;
     if (container) {
-      container.scrollTop = container.scrollHeight;
+      // Only scroll if data length increased (new item added)
+      if (data.length > prevDataLengthRef.current) {
+        container.scrollTop = container.scrollHeight;
+      }
     }
+    // Update previous length reference
+    prevDataLengthRef.current = data.length;
   }, [data]);
 
   // Load custom font if it exists in settings
@@ -349,7 +357,7 @@ const Modal = ({ isOpen, onClose, setSessions, settings, setSettings }) => {
               
               {/* Image upload sections */}
               <div>
-                <label className="block text-gray-700 mb-2">封面背景URL:</label>
+                <label className="block text-gray-700 mb-2">封面背景:</label>
                 <div className="flex space-x-2">
                   {/* <input
                     type="text"
@@ -380,7 +388,7 @@ const Modal = ({ isOpen, onClose, setSessions, settings, setSettings }) => {
               </div>
 
               <div>
-                <label className="block text-gray-700 mb-2">默认背景URL:</label>
+                <label className="block text-gray-700 mb-2">默认背景:</label>
                 <div className="flex space-x-2">
                   {/* <input
                     type="text"
