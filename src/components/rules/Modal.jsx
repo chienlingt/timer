@@ -157,6 +157,13 @@ const Modal = ({ isOpen, onClose, setSessions, settings, setSettings }) => {
   };
 
   const handleSave = () => {
+    // Don't proceed with the save if there's no data - ADD THIS VALIDATION
+    if (data.length === 0) {
+      setShowError(true);
+      setErrorMessage("Cannot save empty session data. Please add at least one session.");
+      return;
+    }
+
     const formattedData = data.map(item => ({
       title: item.环节名称 || item.title,
       isDualTimer: item.双方环节 || item.isDualTimer,
@@ -212,8 +219,6 @@ const Modal = ({ isOpen, onClose, setSessions, settings, setSettings }) => {
       };
     }
   }, []);
-
-  const prevDataLength = useRef(data.length);
 
   const prevDataLengthRef = useRef(data.length);
 
@@ -307,48 +312,53 @@ const Modal = ({ isOpen, onClose, setSessions, settings, setSettings }) => {
 
           {view === "customize" && (
             <div className="flex-1 overflow-y-auto pb-20" ref={containerRef} onDragOver={allowDrop}>
-              {data.map((item, index) => (
-                <div
-                  key={index}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, index)}
-                  onDragOver={allowDrop}
-                  onDrop={(e) => handleDrop(e, index)}
-                  className="bg-white p-4 mb-2 shadow rounded-md flex items-center justify-between"
-                >
-                  <div className="flex items-center">
-                    <div className="mr-2 cursor-pointer">&#9776;</div>
-                    <div>
-                      <p>环节名称: {item.title || item.环节名称}</p>
-                      <p>时长: {item.duration || item.时长}秒</p>
-                      <p>双方环节: {(item.isDualTimer || item.双方环节) ? "是" : "否"}</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handleDelete(index)}
-                    className="ml-4 px-2 py-1 bg-red-500 text-white rounded"
-                  >
-                    删除
-                  </button>
+              {data.length === 0 ? (
+                <div className="text-center p-6 text-gray-500">
+                  暂无环节数据，请添加新的环节或从文件导入
                 </div>
-              ))}
+              ) : (
+                data.map((item, index) => (
+                  <div
+                    key={index}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, index)}
+                    onDragOver={allowDrop}
+                    onDrop={(e) => handleDrop(e, index)}
+                    className="bg-white p-4 mb-2 shadow rounded-md flex items-center justify-between"
+                  >
+                    <div className="flex items-center">
+                      <div className="mr-2 cursor-pointer">&#9776;</div>
+                      <div>
+                        <p>环节名称: {item.title || item.环节名称}</p>
+                        <p>时长: {item.duration || item.时长}秒</p>
+                        <p>双方环节: {(item.isDualTimer || item.双方环节) ? "是" : "否"}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleDelete(index)}
+                      className="ml-4 px-2 py-1 bg-red-500 text-white rounded"
+                    >
+                      删除
+                    </button>
+                  </div>
+                ))
+              )}
 
-
-            <div className="absolute bottom-0 right-0 bg-white p-4 w-full flex justify-end">
-              <button
-                className="px-4 py-2 bg-blue-500 text-white rounded mr-2"
-                onClick={() => setIsAddModalOpen(true)}
-              >
-                新增环节
-              </button>
-              <button
-                className="px-4 py-2 bg-green-500 text-white rounded"
-                onClick={handleSave}
-              >
-                保存
-              </button>
-            </div>
-          </div>  
+              <div className="absolute bottom-0 right-0 bg-white p-4 w-full flex justify-end">
+                <button
+                  className="px-4 py-2 bg-blue-500 text-white rounded mr-2"
+                  onClick={() => setIsAddModalOpen(true)}
+                >
+                  新增环节
+                </button>
+                <button
+                  className="px-4 py-2 bg-green-500 text-white rounded"
+                  onClick={handleSave}
+                >
+                  保存
+                </button>
+              </div>
+            </div>  
           )}
 
           {view === "setting" && (
@@ -359,13 +369,6 @@ const Modal = ({ isOpen, onClose, setSessions, settings, setSettings }) => {
               <div>
                 <label className="block text-gray-700 mb-2">封面背景:</label>
                 <div className="flex space-x-2">
-                  {/* <input
-                    type="text"
-                    className="w-full border rounded p-2"
-                    value={settings.coverBackground || ''}
-                    placeholder="Enter image URL or upload a file"
-                    onChange={(e) => handleSettingsChange('coverBackground', e.target.value)}
-                  /> */}
                   <input
                     type="file"
                     accept="image/*"
@@ -390,13 +393,6 @@ const Modal = ({ isOpen, onClose, setSessions, settings, setSettings }) => {
               <div>
                 <label className="block text-gray-700 mb-2">默认背景:</label>
                 <div className="flex space-x-2">
-                  {/* <input
-                    type="text"
-                    className="w-full border rounded p-2"
-                    value={settings.defaultBackground || ''}
-                    placeholder="Enter image URL or upload a file"
-                    onChange={(e) => handleSettingsChange('defaultBackground', e.target.value)}
-                  /> */}
                   <input
                     type="file"
                     accept="image/*"
