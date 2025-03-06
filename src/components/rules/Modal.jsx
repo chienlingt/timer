@@ -157,18 +157,35 @@ const Modal = ({ isOpen, onClose, setSessions, settings, setSettings }) => {
   };
 
   const handleSave = () => {
-    // Don't proceed with the save if there's no data - ADD THIS VALIDATION
+    // Don't proceed with the save if there's no data
     if (data.length === 0) {
       setShowError(true);
-      setErrorMessage("Cannot save empty session data. Please add at least one session.");
+      setErrorMessage("没有数据可保存");
       return;
     }
 
-    const formattedData = data.map(item => ({
-      title: item.环节名称 || item.title,
-      isDualTimer: item.双方环节 || item.isDualTimer,
-      duration: item.时长 || item.duration
-    }));
+    // Preserve all properties in each item, not just the basic ones
+    // This ensures that properties like 'label1' needed by App.jsx are preserved
+    const formattedData = data.map(item => {
+      // First, ensure we have all the required properties with their standard names
+      const formattedItem = {
+        title: item.环节名称 || item.title || "",
+        isDualTimer: item.双方环节 || item.isDualTimer || false,
+        duration: item.时长 || item.duration || 0,
+        // Ensure label1 and other potentially needed properties exist
+        label1: item.label1 || "",
+        label2: item.label2 || "",
+        // Copy any other existing properties
+        ...item
+      };
+      
+      // Standardize property names if they're in Chinese
+      if (item.环节名称) formattedItem.title = item.环节名称;
+      if (item.双方环节 !== undefined) formattedItem.isDualTimer = item.双方环节;
+      if (item.时长) formattedItem.duration = item.时长;
+      
+      return formattedItem;
+    });
   
     // Save to localStorage
     localStorage.setItem('debateTimerSessions', JSON.stringify(formattedData));
@@ -177,15 +194,19 @@ const Modal = ({ isOpen, onClose, setSessions, settings, setSettings }) => {
     setSessions(formattedData);
     
     // Export to file if requested
-    const fileName = window.prompt("Enter the file name for export:", "data.json");
+    const fileName = window.prompt("输入导出文件名:", "data.json");
     if (fileName) {
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      // Export the full data with all properties
+      const blob = new Blob([JSON.stringify(formattedData, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = fileName;
+      a.download = fileName || "data.json";
       a.click();
       URL.revokeObjectURL(url);
+      
+      // Close modal after successful save
+      onClose();
     }
   };
 
@@ -302,7 +323,7 @@ const Modal = ({ isOpen, onClose, setSessions, settings, setSettings }) => {
               <div {...getRootProps({ className: "dropzone" })}>
                 <input {...getInputProps()} />
                 <p className="cursor-pointer text-gray-700 hover:text-blue-500 transition-colors">
-                  Drag and drop a .json file here, or click to select a file
+                  拖拽 .json 文件到此处, 或点击选择文件
                 </p>
                 {jsonFile && <h2 className="text-lg font-bold mt-4">JSON File: {jsonFile}</h2>}
               </div>
