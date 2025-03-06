@@ -1,12 +1,12 @@
-import PropTypes from "prop-types";
 import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
+import PropTypes from "prop-types";
 
 const PauseModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-75">
-      <div className="bg-white rounded p-4 relative w-96">
+      <div className="bg-white rounded p-4 relative w-96 flex flex-col items-center text-center">
         <button
           className="absolute top-2 right-2 text-gray-600"
           onClick={onClose}
