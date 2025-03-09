@@ -41,7 +41,7 @@ function Timer({ minutes, seconds, label, isActive, idleStyle, activeStyle, sett
         </div>
       )}
       <div
-        className={`text-[8rem] md:text-[10rem] lg:text-[12rem] xl:text-[12rem] font-bold ${getClassName()}`}
+        className={`text-[8.5rem] md:text-[11rem] lg:text-[13rem] xl:text-[13rem] font-bold ${getClassName()}`}
         style={getStyle()}
       >
         {formattedTime}
