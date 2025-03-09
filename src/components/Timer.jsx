@@ -34,7 +34,7 @@ function Timer({ minutes, seconds, label, isActive, idleStyle, activeStyle, sett
     <div className="w-full h-full flex flex-col justify-center items-center">
       {label && (
         <div 
-          className="text-[1.7rem] md:text-[2rem] lg:text-[2.5rem] xl:text-[2.5rem] font-bold" 
+          className="text-[2rem] md:text-[2.5rem] lg:text-[3rem] xl:text-[3rem] font-bold" 
           style={labelStyle}
         >
           {label}
