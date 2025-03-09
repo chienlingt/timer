@@ -88,39 +88,58 @@ function App() {
   // Customize keyboard shortcut for special sessions
   useEffect(() => {
     const handleSpecialSessionToggle = (sessionKey) => {
-      // If currently in a special session, prevent switching to another special session
       if (specialSessionContext) {
-        // If trying to switch to a different special session, do nothing
-        if (specialSessionContext.key !== sessionKey) {
-          return;
+        if (specialSessionContext.key === sessionKey) {
+          // Same key pressed → go back to original sessions
+          setSessions(specialSessionContext.allSessions);
+          setCurrentSessionIndex(specialSessionContext.index);
+          setSpecialSessionContext(null);
+        } else {
+          // ✅ Different special session key → just switch directly
+          setSessions([specialSessions[sessionKey]]);
+          setCurrentSessionIndex(0);
+          setSpecialSessionContext({
+            ...specialSessionContext,
+            key: sessionKey
+          });
         }
-        
-        // If same key is pressed, restore previous context
-        setSessions(specialSessionContext.allSessions);
-        setCurrentSessionIndex(specialSessionContext.index);
-        setSpecialSessionContext(null);
       } else {
-        // Store current session context before switching
+        // First time entering special session → store current context
         setSpecialSessionContext({
           allSessions: sessions,
           index: currentSessionIndex,
           key: sessionKey
         });
-        
-        // Switch to the specific special session
         setSessions([specialSessions[sessionKey]]);
         setCurrentSessionIndex(0);
       }
       setKey((prevKey) => prevKey + 1);
     };
+    
 
     const handleKeyDown = (event) => {
       if (event.key === "1") {
         handleSpecialSessionToggle("1");
       } else if (event.key === "2") {
         handleSpecialSessionToggle("2");
+      } else if (event.key === config.previousSession || event.key === config.nextSession) {
+        // If you're in special session, revert back to original sessions
+        if (specialSessionContext) {
+          setSessions(specialSessionContext.allSessions);
+          setCurrentSessionIndex(specialSessionContext.index);
+          setSpecialSessionContext(null);
+          setKey((prevKey) => prevKey + 1);
+        } else {
+          // Otherwise, navigate normally
+          if (event.key === config.previousSession) {
+            handlePreviousSession();
+          } else {
+            handleNextSession();
+          }
+        }
       }
     };
+    
 
     window.addEventListener('keydown', handleKeyDown);
     return () => {
