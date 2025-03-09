@@ -104,7 +104,7 @@ function Screen({ config, session, onPreviousSession, onNextSession, setIsModalO
         <>
           <div className="text-center mb-6">
             <h1
-              className="text-[1.5rem] md:text-[2rem] lg:text-[3rem] xl:text-[3rem] font-bold"
+              className="text-[2rem] md:text-[3rem] lg:text-[4rem] xl:text-[5rem] font-bold"
               style={getTitleStyle()}
             >
               {renderTitle()}

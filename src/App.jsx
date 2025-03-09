@@ -12,7 +12,7 @@ function App() {
     primaryTimerToggle: "q",
     secondaryTimerToggle: "w",
     restart: "R",
-    pause: "p",
+    pause: "P",
     previousSession: ",",
     nextSession: ".",
   };

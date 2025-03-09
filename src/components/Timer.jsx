@@ -34,14 +34,14 @@ function Timer({ minutes, seconds, label, isActive, idleStyle, activeStyle, sett
     <div className="w-full h-full flex flex-col justify-center items-center">
       {label && (
         <div 
-          className="text-[1.3rem] md:text-[1.5rem] lg:text-[2rem] xl:text-[2rem] font-bold" 
+          className="text-[1.7rem] md:text-[2rem] lg:text-[2.5rem] xl:text-[2.5rem] font-bold" 
           style={labelStyle}
         >
           {label}
         </div>
       )}
       <div
-        className={`text-[8rem] md:text-[10rem] lg:text-[12rem] xl:text-[12rem] font-bold ${getClassName()}`}
+        className={`text-[9rem] md:text-[12rem] lg:text-[14rem] xl:text-[14rem] font-bold ${getClassName()}`}
         style={getStyle()}
       >
         {formattedTime}
