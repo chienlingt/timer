@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import { useEffect, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
+import ColorModal from "../modals/ColorModal";
 import AddModal from "./AddRecord/AddModal";
 import { processJsonFile } from "./jsonHandler";
 
@@ -40,6 +41,11 @@ const Modal = ({ isOpen, onClose, setSessions, settings, setSettings }) => {
   const [errorMessage, setErrorMessage] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [view, setView] = useState("upload");
+  
+  // State for color picker modal
+  const [isColorModalOpen, setIsColorModalOpen] = useState(false);
+  const [currentColorSetting, setCurrentColorSetting] = useState(null);
+  const [colorModalTitle, setColorModalTitle] = useState("");
 
   const containerRef = useRef(null);
 
@@ -63,27 +69,6 @@ const Modal = ({ isOpen, onClose, setSessions, settings, setSettings }) => {
       localStorage.setItem('debateTimerCustomData', JSON.stringify(data));
     }
   }, [data]);
-
-  // Tailwind color palette options
-  const colorOptions = [
-    { name: "Red", value: "rgb(239, 68, 68)", class: "bg-red-400" },
-    { name: "Orange", value: "rgb(249, 115, 22)", class: "bg-orange-400" },
-    { name: "Amber", value: "rgb(245, 158, 11)", class: "bg-amber-400" },
-    { name: "Yellow", value: "rgb(234, 179, 8)", class: "bg-yellow-400" },
-    { name: "Lime", value: "rgb(132, 204, 22)", class: "bg-lime-400" },
-    { name: "Green", value: "rgb(34, 197, 94)", class: "bg-green-400" },
-    { name: "Emerald", value: "rgb(16, 185, 129)", class: "bg-emerald-400" },
-    { name: "Teal", value: "rgb(20, 184, 166)", class: "bg-teal-400" },
-    { name: "Cyan", value: "rgb(6, 182, 212)", class: "bg-cyan-400" },
-    { name: "Sky", value: "rgb(14, 165, 233)", class: "bg-sky-400" },
-    { name: "Blue", value: "rgb(59, 130, 246)", class: "bg-blue-400" },
-    { name: "Indigo", value: "rgb(99, 102, 241)", class: "bg-indigo-400" },
-    { name: "Violet", value: "rgb(139, 92, 246)", class: "bg-violet-400" },
-    { name: "Purple", value: "rgb(168, 85, 247)", class: "bg-purple-400" },
-    { name: "Fuchsia", value: "rgb(217, 70, 239)", class: "bg-fuchsia-400" },
-    { name: "Pink", value: "rgb(236, 72, 153)", class: "bg-pink-400" },
-    { name: "Rose", value: "rgb(244, 63, 94)", class: "bg-rose-400" },
-  ];
 
   const handleSettingsChange = async (field, value) => {
     // For file uploads that need to be processed
@@ -117,6 +102,20 @@ const Modal = ({ isOpen, onClose, setSessions, settings, setSettings }) => {
         ...prev,
         [field]: value,
       }));
+    }
+  };
+  
+  // Function to open color modal
+  const openColorModal = (field, title) => {
+    setCurrentColorSetting(field);
+    setColorModalTitle(title);
+    setIsColorModalOpen(true);
+  };
+  
+  // Handle color change from ColorModal
+  const handleColorChange = (color) => {
+    if (currentColorSetting) {
+      handleSettingsChange(currentColorSetting, color);
     }
   };
   
@@ -160,7 +159,7 @@ const Modal = ({ isOpen, onClose, setSessions, settings, setSettings }) => {
     // Don't proceed with the save if there's no data
     if (data.length === 0) {
       setShowError(true);
-      setErrorMessage("没有数据可保存");
+      setErrorMessage("");
       return;
     }
 
@@ -438,29 +437,33 @@ const Modal = ({ isOpen, onClose, setSessions, settings, setSettings }) => {
               {/* Color selection sections with Tailwind colors */}
               <div>
                 <label className="block text-gray-700 mb-2">正方颜色:</label>
-                <div className="grid grid-cols-9 gap-2">
-                  {colorOptions.map((color) => (
-                    <div 
-                      key={`positive-${color.name}`}
-                      className={`w-full h-10 ${color.class} rounded cursor-pointer transition-all border-4 ${settings.positiveColor === color.value ? 'border-black' : 'border-transparent'}`}
-                      onClick={() => handleSettingsChange('positiveColor', color.value)}
-                      title={color.name}
-                    />
-                  ))}
+                <div className="flex items-center">
+                  <div 
+                    className="w-10 h-10 rounded-md mr-2"
+                    style={{ backgroundColor: settings.positiveColor }}
+                  ></div>
+                  <button
+                    className="px-4 py-2 bg-blue-500 text-white rounded"
+                    onClick={() => openColorModal('positiveColor', '正方颜色')}
+                  >
+                    选择颜色
+                  </button>
                 </div>
               </div>
 
               <div>
                 <label className="block text-gray-700 mb-2">反方颜色:</label>
-                <div className="grid grid-cols-9 gap-2">
-                  {colorOptions.map((color) => (
-                    <div 
-                      key={`negative-${color.name}`}
-                      className={`w-full h-10 ${color.class} rounded cursor-pointer transition-all border-4 ${settings.negativeColor === color.value ? 'border-black' : 'border-transparent'}`}
-                      onClick={() => handleSettingsChange('negativeColor', color.value)}
-                      title={color.name}
-                    />
-                  ))}
+                <div className="flex items-center">
+                  <div 
+                    className="w-10 h-10 rounded-md mr-2"
+                    style={{ backgroundColor: settings.negativeColor }}
+                  ></div>
+                  <button
+                    className="px-4 py-2 bg-blue-500 text-white rounded"
+                    onClick={() => openColorModal('negativeColor', '反方颜色')}
+                  >
+                    选择颜色
+                  </button>
                 </div>
               </div>
 
@@ -519,6 +522,16 @@ const Modal = ({ isOpen, onClose, setSessions, settings, setSettings }) => {
 
         {isAddModalOpen && (
           <AddModal setIsModalOpen={setIsAddModalOpen} setData={setData} />
+        )}
+
+        {isColorModalOpen && (
+          <ColorModal
+            isOpen={isColorModalOpen}
+            onClose={() => setIsColorModalOpen(false)}
+            onColorSelect={handleColorChange}
+            title={colorModalTitle}
+            initialColor={currentColorSetting === 'positiveColor' ? settings.positiveColor : settings.negativeColor}
+          />
         )}
       </div>
     </div>
