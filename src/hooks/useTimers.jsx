@@ -14,11 +14,11 @@ export const useTimers = (session) => {
       session.isDualTimer &&
       primaryTimer.minutes === 0 &&
       primaryTimer.seconds === 0 &&
-      (secondaryTimer.minutes !== 0 || secondaryTimer.seconds !== 0) // Prevent unnecessary switching
+      (secondaryTimer.minutes !== 0 || secondaryTimer.seconds !== 0)
     ) {
       primaryTimer.pause();
-      secondaryTimer.restart(); // Reset secondary timer
-      secondaryTimer.toggleRunning(); // Start secondary timer
+      // Instead of restarting, just start the secondary timer
+      secondaryTimer.toggleRunning();
     }
   }, [primaryTimer.minutes, primaryTimer.seconds, session.isDualTimer]);
 
@@ -28,11 +28,11 @@ export const useTimers = (session) => {
       session.isDualTimer &&
       secondaryTimer.minutes === 0 &&
       secondaryTimer.seconds === 0 &&
-      (primaryTimer.minutes !== 0 || primaryTimer.seconds !== 0) // Prevent unnecessary switching
+      (primaryTimer.minutes !== 0 || primaryTimer.seconds !== 0)
     ) {
       secondaryTimer.pause();
-      primaryTimer.restart(); // Reset primary timer
-      primaryTimer.toggleRunning(); // Start primary timer
+      // Instead of restarting, just start the primary timer
+      primaryTimer.toggleRunning();
     }
   }, [secondaryTimer.minutes, secondaryTimer.seconds, session.isDualTimer]);
 
@@ -63,8 +63,10 @@ export const useTimers = (session) => {
   return {
     primaryMinutes: primaryTimer.minutes,
     primarySeconds: primaryTimer.seconds,
+    primaryMilliseconds: primaryTimer.milliseconds,
     secondaryMinutes: secondaryTimer.minutes,
     secondarySeconds: secondaryTimer.seconds,
+    secondaryMilliseconds: secondaryTimer.milliseconds,
     isPrimaryRunning: primaryTimer.isRunning,
     isSecondaryRunning: secondaryTimer.isRunning,
     togglePrimaryTimer,

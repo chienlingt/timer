@@ -1,6 +1,17 @@
 import PropTypes from "prop-types";
 
-function Timer({ minutes, seconds, label, isActive, idleStyle, activeStyle, settings, labelStyle = {} }) {
+function Timer({ 
+  minutes, 
+  seconds, 
+  milliseconds = 0, 
+  label, 
+  isActive, 
+  idleStyle, 
+  activeStyle, 
+  settings, 
+  labelStyle = {} 
+}) {
+  // Format time with leading zeros and two decimal places for milliseconds
   const formattedTime = `${String(minutes).padStart(2, "0")}:${String(
     seconds
   ).padStart(2, "0")}`;
@@ -53,6 +64,7 @@ function Timer({ minutes, seconds, label, isActive, idleStyle, activeStyle, sett
 Timer.propTypes = {
   minutes: PropTypes.number.isRequired,
   seconds: PropTypes.number.isRequired,
+  milliseconds: PropTypes.number,
   label: PropTypes.string,
   isActive: PropTypes.bool.isRequired,
   idleStyle: PropTypes.string,
