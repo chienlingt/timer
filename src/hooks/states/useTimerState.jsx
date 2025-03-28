@@ -3,7 +3,7 @@ import { useTimer } from "react-timer-hook";
 
 const useTimerState = (durationInSeconds) => {
   const [pausedTime, setPausedTime] = useState(null);
-  const [remainingTime, setRemainingTime] = useState(durationInSeconds * 1000);
+  const [remainingTime, setRemainingTime] = useState(durationInSeconds * 1000 + 990);
   const [milliseconds, setMilliseconds] = useState(990);
   const animationFrameRef = useRef(null);
 
@@ -16,7 +16,7 @@ const useTimerState = (durationInSeconds) => {
     resume,
     restart: restartTimer,
   } = useTimer({
-    expiryTimestamp: new Date(Date.now() + durationInSeconds * 1000),
+    expiryTimestamp: new Date(Date.now() + durationInSeconds * 1000 + 990),
     autoStart: false,
   });
 
@@ -93,8 +93,8 @@ const useTimerState = (durationInSeconds) => {
   const restart = useCallback(() => {
     setPausedTime(null);
     setMilliseconds(990);
-    setRemainingTime(durationInSeconds * 1000);
-    restartTimer(new Date(Date.now() + durationInSeconds * 1000), false);
+    setRemainingTime(durationInSeconds * 1000 + 990);
+    restartTimer(new Date(Date.now() + durationInSeconds * 1000 + 990), false);
   }, [durationInSeconds, restartTimer]);
 
   return {
