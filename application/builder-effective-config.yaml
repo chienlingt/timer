@@ -1,5 +1,5 @@
 directories:
-  output: dist_electron
+  output: application
   buildResources: build
 appId: com.quanbian.timer
 productName: 全辩计时器

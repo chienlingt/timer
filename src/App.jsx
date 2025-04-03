@@ -46,7 +46,8 @@ function App() {
     positiveColor: 'rgb(59, 130, 246)', // Tailwind blue-500
     negativeColor: 'rgb(132, 204, 22)', // Tailwind lime-500
     fontStyle: 'font-sans', // Default font style
-    customFontFamily: ''
+    customFontFamily: '',
+    customFontPath: ''
   };
 
   // Load sessions from localStorage or use default
@@ -57,9 +58,76 @@ function App() {
 
   // Load settings from localStorage or use default
   const [settings, setSettings] = useState(() => {
+    // First try to load from localStorage
     const savedSettings = localStorage.getItem('debateTimerSettings');
-    return savedSettings ? JSON.parse(savedSettings) : defaultSettings;
+    if (savedSettings) {
+      return JSON.parse(savedSettings);
+    }
+    
+    // Fallback to default settings
+    return defaultSettings;
   });
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      if (window.electronAPI) {
+        try {
+          const electronSettings = await window.electronAPI.loadAppSettings();
+          if (electronSettings) {
+            setSettings(prev => ({
+              ...prev,
+              ...electronSettings
+            }));
+          }
+        } catch (error) {
+          console.error('Error loading settings from Electron:', error);
+        }
+      }
+    };
+    
+    loadSettings();
+  }, []);
+
+  // Save settings to both localStorage and Electron store
+  useEffect(() => {
+    localStorage.setItem('debateTimerSettings', JSON.stringify(settings));
+    
+    if (window.electronAPI) {
+      window.electronAPI.saveAppSettings(settings).catch(error => {
+        console.error('Error saving settings to Electron:', error);
+      });
+    }
+  }, [settings]);
+
+  // Enhanced font loading
+  useEffect(() => {
+    const loadFont = async () => {
+      if (settings.customFontFamily && settings.customFontPath) {
+        try {
+          // Check if the font file exists (in Electron environment)
+          if (window.electronAPI && settings.customFontPath.startsWith('file://')) {
+            const exists = await window.electronAPI.checkFileExists(
+              settings.customFontPath.replace('file://', '')
+            );
+            if (!exists) return;
+          }
+          
+          const fontFace = new FontFace(
+            settings.customFontFamily,
+            `url(${settings.customFontPath})`
+          );
+          
+          await fontFace.load();
+          document.fonts.add(fontFace);
+          setFontsLoaded(true);
+        } catch (err) {
+          console.error('Failed to load font:', err);
+        }
+      }
+    };
+    
+    loadFont();
+  }, [settings.customFontFamily, settings.customFontPath]);
 
   const [currentSessionIndex, setCurrentSessionIndex] = useState(() => {
     const savedIndex = localStorage.getItem('debateTimerCurrentIndex');
@@ -69,6 +137,7 @@ function App() {
   const [key, setKey] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [specialSessionContext, setSpecialSessionContext] = useState(null);
+  const [fontsLoaded, setFontsLoaded] = useState(false);
 
   // Save sessions to localStorage whenever it changes
   useEffect(() => {
@@ -81,9 +150,119 @@ function App() {
   }, [currentSessionIndex]);
 
   // Save settings to localStorage
+  
+
+  // Load custom font if available
   useEffect(() => {
-    localStorage.setItem('debateTimerSettings', JSON.stringify(settings));
-  }, [settings]);
+    if (settings.customFontFamily && settings.customFontPath && !fontsLoaded) {
+      const fontFace = new FontFace(settings.customFontFamily, `url(${settings.customFontPath})`);
+      fontFace.load().then(() => {
+        document.fonts.add(fontFace);
+        setFontsLoaded(true);
+      }).catch(err => {
+        console.error('Failed to load font:', err);
+      });
+    }
+  }, [settings.customFontFamily, settings.customFontPath, fontsLoaded]);
+
+  // Load stored files when app starts
+  useEffect(() => {
+    const loadStoredFiles = async () => {
+      // Check if electronAPI is available (running in Electron)
+      if (window.electronAPI) {
+        try {
+          // First try to get any resolved settings directly
+          const resolvedSettings = await window.electronAPI.getResolvedSettings();
+          
+          // Then get the actual files
+          const files = await window.electronAPI.getStoredFiles();
+          
+          if (files && files.length > 0) {
+            const updatedSettings = { ...settings };
+            let settingsChanged = false;
+            
+            // Use resolved settings first if available
+            if (resolvedSettings.coverBackground) {
+              updatedSettings.coverBackground = resolvedSettings.coverBackground;
+              settingsChanged = true;
+            }
+            
+            if (resolvedSettings.defaultBackground) {
+              updatedSettings.defaultBackground = resolvedSettings.defaultBackground;
+              settingsChanged = true;
+            }
+            
+            if (resolvedSettings.customFontPath) {
+              updatedSettings.customFontPath = resolvedSettings.customFontPath;
+              settingsChanged = true;
+            }
+            
+            // If resolved settings didn't work, fall back to scanning files
+            if (!settingsChanged) {
+              // Look for background files
+              const coverBgFile = files.find(file => file.name.includes('coverBackground'));
+              if (coverBgFile && (!settings.coverBackground || !settings.coverBackground.includes(coverBgFile.name))) {
+                updatedSettings.coverBackground = coverBgFile.path;
+                settingsChanged = true;
+              }
+              
+              const defaultBgFile = files.find(file => file.name.includes('defaultBackground'));
+              if (defaultBgFile && (!settings.defaultBackground || !settings.defaultBackground.includes(defaultBgFile.name))) {
+                updatedSettings.defaultBackground = defaultBgFile.path;
+                settingsChanged = true;
+              }
+            }
+            
+            // Handle font loading specifically
+            const fontFiles = files.filter(file => file.name.includes('font-'));
+            if (fontFiles.length > 0) {
+              // Sort by timestamp (newer first) if we have multiple fonts
+              fontFiles.sort((a, b) => {
+                const timestampA = parseInt(a.name.split('-')[1]);
+                const timestampB = parseInt(b.name.split('-')[1]);
+                return timestampB - timestampA;
+              });
+              
+              // Use the newest font
+              const newestFont = fontFiles[0];
+              
+              if (!settings.customFontPath || !settings.customFontPath.includes(newestFont.name)) {
+                updatedSettings.customFontPath = newestFont.path;
+                
+                // Extract the original font name
+                const parts = newestFont.name.split('-');
+                parts.shift(); // Remove "font-" prefix
+                parts.shift(); // Remove timestamp
+                const fontName = parts.join('-').replace(/\.[^/.]+$/, ""); // Remove extension
+                
+                updatedSettings.customFontFamily = `custom-font-${fontName}`;
+                settingsChanged = true;
+                
+                // Load the font immediately
+                try {
+                  const fontFace = new FontFace(updatedSettings.customFontFamily, `url(${newestFont.path})`);
+                  await fontFace.load();
+                  document.fonts.add(fontFace);
+                  setFontsLoaded(true);
+                } catch (err) {
+                  console.error('Failed to load font:', err);
+                }
+              }
+            }
+            
+            // Only update settings if something changed
+            if (settingsChanged) {
+              setSettings(updatedSettings);
+            }
+          }
+        } catch (error) {
+          console.error('Error loading stored files:', error);
+        }
+      }
+    };
+    
+    loadStoredFiles();
+  }, []); // Empty dependency array ensures this runs only once at app startup
 
   // Customize keyboard shortcut for special sessions
   useEffect(() => {

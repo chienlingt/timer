@@ -39,6 +39,7 @@
     }
   },
   "dependencies": {
+    "@electron/remote": "^2.1.2",
     "@fortawesome/fontawesome-svg-core": "^6.5.2",
     "@fortawesome/free-solid-svg-icons": "^6.6.0",
     "@fortawesome/react-fontawesome": "^0.2.2",
@@ -48,6 +49,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
+    "electron-store": "^10.0.1",
     "framer-motion": "^11.2.10",
     "loadsh": "^0.0.4",
     "lodash": "^4.17.21",

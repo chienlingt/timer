@@ -5,35 +5,6 @@ import ColorModal from "../modals/ColorModal";
 import AddModal from "./AddRecord/AddModal";
 import { processJsonFile } from "./jsonHandler";
 
-// Helper function to get permanent image URLs using a free image hosting service
-const uploadImageAndGetUrl = async (file) => {
-  // For a real implementation, you would use a service like Cloudinary, Firebase Storage, or similar
-  // This is a placeholder function to show the approach
-  
-  // Option 1: For testing, create object URL (which isn't permanent but works during the session)
-  return URL.createObjectURL(file);
-  
-  // Option 2: In production, you'd implement an upload to an image hosting service
-  // Example with FormData (you would replace with your actual upload endpoint)
-  /*
-  const formData = new FormData();
-  formData.append('image', file);
-  
-  try {
-    const response = await fetch('https://your-image-hosting-service.com/upload', {
-      method: 'POST',
-      body: formData,
-    });
-    
-    const data = await response.json();
-    return data.imageUrl; // The permanent URL returned by the service
-  } catch (error) {
-    console.error('Error uploading image:', error);
-    return null;
-  }
-  */
-};
-
 const Modal = ({ isOpen, onClose, setSessions, settings, setSettings }) => {
   const [jsonFile, setJsonFile] = useState(null);
   const [data, setData] = useState([]);
@@ -46,7 +17,6 @@ const Modal = ({ isOpen, onClose, setSessions, settings, setSettings }) => {
   const [isColorModalOpen, setIsColorModalOpen] = useState(false);
   const [currentColorSetting, setCurrentColorSetting] = useState(null);
   const [colorModalTitle, setColorModalTitle] = useState("");
-
   const containerRef = useRef(null);
 
   // Load data from localStorage when modal opens
@@ -70,24 +40,51 @@ const Modal = ({ isOpen, onClose, setSessions, settings, setSettings }) => {
     }
   }, [data]);
 
+  // Improved file handling logic with better error handling and persistence
   const handleSettingsChange = async (field, value) => {
-    // For file uploads that need to be processed
-    if (field === 'coverBackground' || field === 'defaultBackground') {
+    // For background images or fonts that need to be saved permanently
+    if (field === 'coverBackground' || field === 'defaultBackground' || field === 'customFontPath') {
       // If value is a File object, process it
       if (value instanceof File) {
         try {
-          // Get a permanent URL for the image
-          const imageUrl = await uploadImageAndGetUrl(value);
-          
-          if (imageUrl) {
+          // Get a permanent URL for the file using Electron's API
+          if (window.electronAPI) {
+            // Create a proper file type identifier
+            const fileType = field;
+            
+            // Use FileReader to read the file data
+            const fileReader = new FileReader();
+            
+            const fileDataPromise = new Promise((resolve) => {
+              fileReader.onload = () => resolve(fileReader.result);
+            });
+            
+            fileReader.readAsDataURL(value);
+            const fileData = await fileDataPromise;
+            
+            // Save file through Electron and get the local file path
+            const filePath = await window.electronAPI.saveFile({
+              fileData,
+              fileName: value.name,
+              fileType: fileType
+            });
+            
+            // Update settings with the saved path
+            if (filePath) {
+              const updatedSettings = { ...settings };
+              updatedSettings[field] = filePath;
+              setSettings(updatedSettings);
+            }
+          } else {
+            // Fallback for web (using object URLs)
+            const fileUrl = URL.createObjectURL(value);
             setSettings((prev) => ({
               ...prev,
-              [field]: imageUrl,
+              [field]: fileUrl,
             }));
           }
         } catch (error) {
           console.error(`Error processing ${field}:`, error);
-          // Handle error (show to user, etc.)
         }
       } else {
         // If it's already a URL, just set it directly
@@ -254,32 +251,96 @@ const Modal = ({ isOpen, onClose, setSessions, settings, setSettings }) => {
     prevDataLengthRef.current = data.length;
   }, [data]);
 
-  // Load custom font if it exists in settings
-  useEffect(() => {
-    if (settings.customFontFamily && settings.customFontUrl) {
-      const fontFamily = settings.customFontFamily;
-      const fontUrl = settings.customFontUrl;
-      const format = settings.customFontFormat || 'truetype';
-      
-      // Add the font face to the document
-      const style = document.createElement('style');
-      style.textContent = `
-        @font-face {
-          font-family: '${fontFamily}';
-          src: url('${fontUrl}') format('${format}');
-          font-weight: normal;
-          font-style: normal;
+  // Improved font handling with better format detection and error handling
+  const handleFontUpload = async (file) => {
+    try {
+      if (window.electronAPI) {
+        if (!file) {
+          // Use Electron's dialog to select a font file
+          const result = await window.electronAPI.uploadFont();
+          if (result && result.path) {
+            // Update settings with the new font
+            setSettings(prev => ({
+              ...prev,
+              customFontFamily: `custom-font-${result.name.replace(/\.[^/.]+$/, "")}`,
+              customFontPath: result.path
+            }));
+            
+            // Load the font immediately
+            try {
+              const fontFace = new FontFace(`custom-font-${result.name.replace(/\.[^/.]+$/, "")}`, `url(${result.path})`);
+              await fontFace.load();
+              document.fonts.add(fontFace);
+            } catch (fontError) {
+              console.error('Error loading font:', fontError);
+            }
+          }
+        } else {
+          // Process uploaded font file
+          const fileReader = new FileReader();
+          
+          const fileDataPromise = new Promise((resolve) => {
+            fileReader.onload = () => resolve(fileReader.result);
+          });
+          
+          fileReader.readAsDataURL(file);
+          const fileData = await fileDataPromise;
+          
+          // Save file through Electron and get the local file path
+          const fontUrl = await window.electronAPI.saveFile({
+            fileData,
+            fileName: file.name,
+            fileType: 'font'
+          });
+          
+          if (fontUrl) {
+            // Create a consistent font family name based on the filename
+            const fontName = file.name.replace(/\.[^/.]+$/, ""); // Remove extension
+            const fontFamily = `custom-font-${fontName}`;
+            
+            try {
+              // Load the font immediately
+              const fontFace = new FontFace(fontFamily, `url(${fontUrl})`);
+              await fontFace.load();
+              document.fonts.add(fontFace);
+              
+              // Update settings
+              setSettings(prev => ({
+                ...prev,
+                customFontFamily: fontFamily,
+                customFontPath: fontUrl
+              }));
+            } catch (fontError) {
+              console.error('Error loading font:', fontError);
+            }
+          }
         }
-      `;
-      document.head.appendChild(style);
-      
-      return () => {
-        // Clean up when component unmounts
-        document.head.removeChild(style);
-      };
+      } else {
+        // Fallback for web environment
+        if (file) {
+          const fontUrl = URL.createObjectURL(file);
+          const fontFamily = `custom-font-${file.name.replace(/\.[^/.]+$/, "")}`;
+          
+          try {
+            const fontFace = new FontFace(fontFamily, `url(${fontUrl})`);
+            await fontFace.load();
+            document.fonts.add(fontFace);
+            
+            setSettings(prev => ({
+              ...prev,
+              customFontFamily: fontFamily,
+              customFontPath: fontUrl
+            }));
+          } catch (fontError) {
+            console.error('Error loading font:', fontError);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error processing font:', error);
     }
-  }, [settings.customFontFamily, settings.customFontUrl, settings.customFontFormat]);
-
+  };
+  
   if (!isOpen) return null;
 
   return (
@@ -469,52 +530,36 @@ const Modal = ({ isOpen, onClose, setSessions, settings, setSettings }) => {
 
               <div>
                 <label className="block text-gray-700 mb-2">自定义字体:</label>
-                <input
-                  type="file"
-                  accept=".woff,.woff2,.ttf,.otf"
-                  className="w-57 border rounded p-2"
-                  onChange={async (e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                      try {
-                        // Upload font file to get permanent URL
-                        const fontUrl = await uploadImageAndGetUrl(file);
-                        
-                        // Create a unique font family name
-                        const fontFamily = `custom-font-${Date.now()}`;
-                        
-                        // Determine format from filename
-                        const format = getFormat(file.name);
-                        
-                        // Update settings with all font information
-                        setSettings(prev => ({
-                          ...prev,
-                          customFontFamily: fontFamily,
-                          customFontUrl: fontUrl,
-                          customFontFormat: format
-                        }));
-                        
-                        // Dynamically add @font-face rule
-                        const style = document.createElement('style');
-                        style.textContent = `
-                          @font-face {
-                            font-family: '${fontFamily}';
-                            src: url('${fontUrl}') format('${format}');
-                            font-weight: normal;
-                            font-style: normal;
-                          }
-                        `;
-                        document.head.appendChild(style);
-                      } catch (error) {
-                        console.error('Error processing font:', error);
+                <div className="flex space-x-2">
+                  <input
+                    type="file"
+                    accept=".woff,.woff2,.ttf,.otf"
+                    className="w-57 border rounded p-2"
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        handleFontUpload(file);
                       }
-                    }
-                  }}
-                />
-                <div className={`mt-4 text-xl`} 
+                    }}
+                  />
+                  {window.electronAPI && (
+                    <button
+                      className="px-4 py-2 bg-blue-500 text-white rounded"
+                      onClick={() => handleFontUpload()}
+                    >
+                      选择文件
+                    </button>
+                  )}
+                </div>
+                <div className="mt-4 text-xl" 
                     style={{fontFamily: settings.customFontFamily || 'inherit'}}>
                   预览文字 / Preview Text / 0123456789
                 </div>
+                {settings.customFontPath && (
+                  <div className="mt-2 text-sm text-gray-500">
+                    当前字体: {settings.customFontPath.split('/').pop()}
+                  </div>
+                )}
               </div>
             </div>
           )}
