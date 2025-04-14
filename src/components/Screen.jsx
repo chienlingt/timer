@@ -46,8 +46,18 @@ function Screen({ config, session, onPreviousSession, onNextSession, setIsModalO
   };
 
   // Get timer active style based on session type
-  const getTimerActiveStyle = () => {
-    if (session.title === "教练指导") {
+  const getTimerActiveStyle = (timerLabel) => {
+    // For dual timers, use positive/negative colors based on the label
+    if (session.isDualTimer) {
+      if (timerLabel === "正方" || timerLabel === session.label1) {
+        return settings.positiveColor;
+      } else if (timerLabel === "反方" || timerLabel === session.label2) {
+        return settings.negativeColor;
+      }
+    }
+  
+    // For single timers, use existing logic
+    if (session.title === "教练指导" || (!session.title.includes("正") && !session.title.includes("反"))) {
       return "text-white";
     }
     
@@ -123,7 +133,7 @@ function Screen({ config, session, onPreviousSession, onNextSession, setIsModalO
                   : isPrimaryRunning
               }
               idleStyle="text-slate-400"
-              activeStyle={getTimerActiveStyle()}
+              activeStyle={getTimerActiveStyle(session.isDualTimer ? session.label1 : "")}
               settings={settings}
               labelStyle={session.isDualTimer ? { color: settings.positiveColor } : {}}
             />
@@ -135,7 +145,7 @@ function Screen({ config, session, onPreviousSession, onNextSession, setIsModalO
                 label={session.label2}
                 isActive={!isPrimaryRunning && isSecondaryRunning}
                 idleStyle="text-slate-400"
-                activeStyle={settings.negativeColor}
+                activeStyle={getTimerActiveStyle(session.label2)}
                 settings={settings}
                 labelStyle={{ color: settings.negativeColor }}
               />

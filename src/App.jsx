@@ -43,8 +43,8 @@ function App() {
   const defaultSettings = {
     coverBackground: 'src/assets/计时器封面画面-02.png',
     defaultBackground: 'src/assets/计时器待机画面-02.png',
-    positiveColor: 'rgb(59, 130, 246)', // Tailwind blue-500
-    negativeColor: 'rgb(132, 204, 22)', // Tailwind lime-500
+    positiveColor: '#23C1FF', // Tailwind blue-500
+    negativeColor: '#AEF359', // Tailwind lime-500
     fontStyle: 'font-sans', // Default font style
     customFontFamily: '',
     customFontPath: ''
