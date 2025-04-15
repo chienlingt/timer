@@ -12,6 +12,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
     
     // Add methods to check if files exist
     checkFileExists: (filePath) => ipcRenderer.invoke('check-file-exists', filePath),
+
+    readFile: async (filePath) => {
+      try {
+        // Use Node.js fs module to read the file
+        const data = await fs.promises.readFile(filePath);
+        return data;
+      } catch (error) {
+        console.error('Error reading file:', error);
+        return null;
+      }
+    },
     
     // File watchers for auto-refresh
     watchSettingsChanges: (callback) => {
