@@ -95,7 +95,7 @@ function Timer({
   };
 
   return (
-    <div className="w-full h-full flex flex-col justify-center items-center">
+    <div className="w-full h-full flex flex-col justify-center items-center -mt-10">
       {label && (
         <div 
           className="text-[2rem] md:text-[2.5rem] lg:text-[3rem] xl:text-[3rem] font-bold" 
@@ -105,7 +105,7 @@ function Timer({
         </div>
       )}
       <div
-        className={`text-[8.5rem] md:text-[11rem] lg:text-[13rem] xl:text-[13rem] font-bold ${getClassName()}`}
+        className={`text-[8.5rem] md:text-[11rem] lg:text-[13rem] xl:text-[13rem] font-bold -mt-4 ${getClassName()}`}
         style={getStyle()}
       >
         {formattedTime}
