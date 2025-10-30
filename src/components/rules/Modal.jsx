@@ -147,13 +147,10 @@ const Modal = ({ isOpen, onClose, setSessions, settings, setSettings }) => {
         const configText = await configFile.async("string");
         const configData = JSON.parse(configText);
         
-        // Handle sessions data
-        if (configData.sessions) {
-          setData(configData.sessions);
-          setSessions(configData.sessions);
-          localStorage.setItem('debateTimerCustomData', JSON.stringify(configData.sessions));
-        }
-        
+        // NOTE: sessions in config.json are intentionally ignored now.
+        // We still allow non-file settings in config.json to update colors/font/style but we do NOT
+        // replace the app's session list from the uploaded ZIP's config.json anymore.
+
         // Handle settings if present
         if (configData.settings) {
           const newSettings = {...settings};

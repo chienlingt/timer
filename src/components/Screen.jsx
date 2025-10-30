@@ -12,148 +12,127 @@ function Screen({ config, session, onPreviousSession, onNextSession, setIsModalO
   const {
     primaryMinutes,
     primarySeconds,
+    primaryMilliseconds,
     secondaryMinutes,
     secondarySeconds,
+    secondaryMilliseconds,
     isPrimaryRunning,
     isSecondaryRunning,
+    primaryExpired,
+    isBothRunning,
+    isGlowing,
+    toggleBoth,                    // NEW
     togglePrimaryTimer,
     toggleSecondaryTimer,
     restartTimers,
+    restartPrimary,                // added
     pauseTimers,
   } = useTimers(session);
 
-  useKeyboardShortcut(config.primaryTimerToggle, togglePrimaryTimer);
+  // Keyboard shortcuts -- primary key maps to both when dual
+  useKeyboardShortcut(config.primaryTimerToggle, session?.isDualTimer ? toggleBoth : togglePrimaryTimer);
   useKeyboardShortcut(config.secondaryTimerToggle, toggleSecondaryTimer);
-  useKeyboardShortcut(config.restart, restartTimers);
+  useKeyboardShortcut(config.restart, session?.isDualTimer ? restartPrimary : restartTimers);
   useKeyboardShortcut(config.pause, () => {
     pauseTimers();
-    setIsPaused((prev) => !prev);
+    setIsPaused(prev => !prev);
   });
+
   useKeyboardShortcut(config.previousSession, onPreviousSession);
   useKeyboardShortcut(config.nextSession, onNextSession);
 
-  // Get title style for non-dual timers
   const getTitleStyle = () => {
     if (session.isDualTimer) return { color: "white" };
-    
-    if (session.title.includes("正")) {
-      return { color: settings.positiveColor };
-    }
-    if (session.title.includes("反")) {
-      return { color: settings.negativeColor };
-    }
+    if (session.title && session.title.includes("正")) return { color: settings.positiveColor };
+    if (session.title && session.title.includes("反")) return { color: settings.negativeColor };
     return { color: "white" };
   };
 
-  // Get timer active style based on session type
   const getTimerActiveStyle = (timerLabel) => {
-    // For dual timers, use positive/negative colors based on the label
     if (session.isDualTimer) {
-      if (timerLabel === "正方" || timerLabel === session.label1) {
-        return settings.positiveColor;
-      } else if (timerLabel === "反方" || timerLabel === session.label2) {
-        return settings.negativeColor;
-      }
+      if (timerLabel === session.label1) return settings.positiveColor;
+      if (timerLabel === session.label2) return settings.negativeColor;
     }
-  
-    // For single timers, use existing logic
-    if (session.title === "教练指导" || (!session.title.includes("正") && !session.title.includes("反"))) {
+    if (session.title === "教练指导" || (!session.title?.includes("正") && !session.title?.includes("反"))) {
       return "text-white";
     }
-    
-    return session.title.includes("反") ? settings.negativeColor : settings.positiveColor;
+    return session.title?.includes("反") ? settings.negativeColor : settings.positiveColor;
   };
 
-  // Render title with colored parts for dual timers
   const renderTitle = () => {
-    if (!session.isDualTimer) {
-      return session.title;
-    }
-
-    // For dual timer sessions, colorize the specific terms
+    if (!session.isDualTimer) return session.title;
     return (
       <>
-        {session.title.split(/(正方|反方)/).map((part, index) => {
-          if (part === "正方") {
-            return (
-              <span key={index} style={{ color: settings.positiveColor }}>
-                {part}
-              </span>
-            );
-          } else if (part === "反方") {
-            return (
-              <span key={index} style={{ color: settings.negativeColor }}>
-                {part}
-              </span>
-            );
-          }
+        {session.title.split(/(正方|反方)/).map((part, i) => {
+          if (part === "正方") return <span key={i} style={{ color: settings.positiveColor }}>{part}</span>;
+          if (part === "反方") return <span key={i} style={{ color: settings.negativeColor }}>{part}</span>;
           return part;
         })}
       </>
     );
   };
 
+  const label1 = session.label1 ?? "";
+  const label2 = session.label2 ?? "";
+
   return (
     <div
       className={`w-screen h-screen flex flex-col justify-center bg-cover bg-center ${settings.fontStyle}`}
       style={{
-        backgroundImage: session.title === "封面" 
-          ? `url("${settings.coverBackground}")` 
+        backgroundImage: session.title === "封面"
+          ? `url("${settings.coverBackground}")`
           : `url("${settings.defaultBackground}")`,
         fontFamily: settings.customFontFamily || 'inherit'
       }}
-    
     >
       <div className="absolute top-4 right-4">
         <button onClick={() => setIsModalOpen(true)}>
           <FontAwesomeIcon icon="cog" className="text-gray-400 hover:text-gray-800 transition-colors text-3xl" />
         </button>
       </div>
-  
+
       {session.title !== "封面" && (
         <>
           <div className="text-center mb-6">
-            <h1
-              className="text-[2rem] md:text-[3rem] lg:text-[4rem] xl:text-[5rem] font-bold"
-              style={getTitleStyle()}
-            >
+            <h1 className="text-[2rem] md:text-[3rem] lg:text-[4rem] xl:text-[5rem] font-bold" style={getTitleStyle()}>
               {renderTitle()}
             </h1>
           </div>
-  
-          <div className="flex justify-center">
+
+          <div className="flex justify-center gap-12">
             <Timer
               key="Primary"
               minutes={primaryMinutes}
               seconds={primarySeconds}
-              label={session.isDualTimer ? session.label1 : ""}
-              isActive={
-                session.isDualTimer
-                  ? isPrimaryRunning && !isSecondaryRunning
-                  : isPrimaryRunning
-              }
+              milliseconds={primaryMilliseconds}
+              label={session.isDualTimer ? label1 : session.title}
+              isActive={session.isDualTimer ? (isPrimaryRunning || isBothRunning) : isPrimaryRunning}
               idleStyle="text-slate-400"
-              activeStyle={getTimerActiveStyle(session.isDualTimer ? session.label1 : "")}
+              activeStyle={getTimerActiveStyle(session.isDualTimer ? label1 : "")}
               settings={settings}
               labelStyle={session.isDualTimer ? { color: settings.positiveColor } : {}}
+              glow={session.isDualTimer && isGlowing}
             />
+
             {session.isDualTimer && (
               <Timer
                 key="Secondary"
                 minutes={secondaryMinutes}
                 seconds={secondarySeconds}
-                label={session.label2}
-                isActive={!isPrimaryRunning && isSecondaryRunning}
+                milliseconds={secondaryMilliseconds}
+                label={label2}
+                isActive={session.isDualTimer ? (isSecondaryRunning || isBothRunning) : isSecondaryRunning}
                 idleStyle="text-slate-400"
-                activeStyle={getTimerActiveStyle(session.label2)}
+                activeStyle={getTimerActiveStyle(label2)}
                 settings={settings}
                 labelStyle={{ color: settings.negativeColor }}
+                glow={session.isDualTimer && isGlowing}
               />
             )}
           </div>
         </>
       )}
-  
+
       {isPaused && <PauseModal isOpen={isPaused} onClose={pauseTimers} />}
     </div>
   );
@@ -170,7 +149,9 @@ Screen.propTypes = {
   }).isRequired,
   session: PropTypes.shape({
     isDualTimer: PropTypes.bool.isRequired,
-    duration: PropTypes.number.isRequired,
+    duration: PropTypes.number,
+    primaryDuration: PropTypes.number,
+    secondaryDuration: PropTypes.number,
     label1: PropTypes.string,
     label2: PropTypes.string,
     title: PropTypes.string.isRequired,

@@ -1,0 +1,15 @@
+[
+  {
+    "title": "",
+    "duration": 120,
+    "isDualTimer": false
+  },
+  {
+    "title": "",
+    "isDualTimer": true,
+    "primaryDuration": 180,
+    "secondaryDuration": 1080,
+    "label1": "环节时长",
+    "label2": "总时长"
+  }
+]

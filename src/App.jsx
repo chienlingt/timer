@@ -1,6 +1,7 @@
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { faCog } from '@fortawesome/free-solid-svg-icons';
 import { useEffect, useState } from "react";
+import defaultSessionsData from '../BBK semi final.json'; // Import the JSON file
 import Screen from "./components/Screen";
 import Modal from "./components/rules/Modal";
 
@@ -11,20 +12,11 @@ function App() {
   const config = {
     primaryTimerToggle: "q",
     secondaryTimerToggle: "w",
-    restart: "R",
+    restart: "r",
     pause: "P",
     previousSession: ",",
     nextSession: ".",
   };
-
-  // Initial default session
-  const defaultSessions = [
-    {
-      title: "请选择赛制",
-      isDualTimer: false,
-      duration: 1,
-    }
-  ];
 
   const specialSessions = {
     "1": { 
@@ -43,28 +35,22 @@ function App() {
   const defaultSettings = {
     coverBackground: 'src/assets/计时器封面画面-02.png',
     defaultBackground: 'src/assets/计时器待机画面-02.png',
-    positiveColor: '#23C1FF', // Tailwind blue-500
-    negativeColor: '#AEF359', // Tailwind lime-500
-    fontStyle: 'font-sans', // Default font style
+    positiveColor: '#23C1FF',
+    negativeColor: '#AEF359',
+    fontStyle: 'font-sans',
     customFontFamily: '',
     customFontPath: ''
   };
 
-  // Load sessions from localStorage or use default
-  const [sessions, setSessions] = useState(() => {
-    const savedSessions = localStorage.getItem('debateTimerSessions');
-    return savedSessions ? JSON.parse(savedSessions) : defaultSessions;
-  });
+  // Load sessions from the imported JSON file (not localStorage)
+  const [sessions, setSessions] = useState(defaultSessionsData);
 
   // Load settings from localStorage or use default
   const [settings, setSettings] = useState(() => {
-    // First try to load from localStorage
     const savedSettings = localStorage.getItem('debateTimerSettings');
     if (savedSettings) {
       return JSON.parse(savedSettings);
     }
-    
-    // Fallback to default settings
     return defaultSettings;
   });
 
@@ -104,7 +90,6 @@ function App() {
     const loadFont = async () => {
       if (settings.customFontFamily && settings.customFontPath) {
         try {
-          // Check if the font file exists (in Electron environment)
           if (window.electronAPI && settings.customFontPath.startsWith('file://')) {
             const exists = await window.electronAPI.checkFileExists(
               settings.customFontPath.replace('file://', '')
@@ -139,18 +124,10 @@ function App() {
   const [specialSessionContext, setSpecialSessionContext] = useState(null);
   const [fontsLoaded, setFontsLoaded] = useState(false);
 
-  // Save sessions to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('debateTimerSessions', JSON.stringify(sessions));
-  }, [sessions]);
-
   // Save current session index to localStorage
   useEffect(() => {
     localStorage.setItem('debateTimerCurrentIndex', currentSessionIndex.toString());
   }, [currentSessionIndex]);
-
-  // Save settings to localStorage
-  
 
   // Load custom font if available
   useEffect(() => {
@@ -168,20 +145,15 @@ function App() {
   // Load stored files when app starts
   useEffect(() => {
     const loadStoredFiles = async () => {
-      // Check if electronAPI is available (running in Electron)
       if (window.electronAPI) {
         try {
-          // First try to get any resolved settings directly
           const resolvedSettings = await window.electronAPI.getResolvedSettings();
-          
-          // Then get the actual files
           const files = await window.electronAPI.getStoredFiles();
           
           if (files && files.length > 0) {
             const updatedSettings = { ...settings };
             let settingsChanged = false;
             
-            // Use resolved settings first if available
             if (resolvedSettings.coverBackground) {
               updatedSettings.coverBackground = resolvedSettings.coverBackground;
               settingsChanged = true;
@@ -197,9 +169,7 @@ function App() {
               settingsChanged = true;
             }
             
-            // If resolved settings didn't work, fall back to scanning files
             if (!settingsChanged) {
-              // Look for background files
               const coverBgFile = files.find(file => file.name.includes('coverBackground'));
               if (coverBgFile && (!settings.coverBackground || !settings.coverBackground.includes(coverBgFile.name))) {
                 updatedSettings.coverBackground = coverBgFile.path;
@@ -213,32 +183,27 @@ function App() {
               }
             }
             
-            // Handle font loading specifically
             const fontFiles = files.filter(file => file.name.includes('font-'));
             if (fontFiles.length > 0) {
-              // Sort by timestamp (newer first) if we have multiple fonts
               fontFiles.sort((a, b) => {
                 const timestampA = parseInt(a.name.split('-')[1]);
                 const timestampB = parseInt(b.name.split('-')[1]);
                 return timestampB - timestampA;
               });
               
-              // Use the newest font
               const newestFont = fontFiles[0];
               
               if (!settings.customFontPath || !settings.customFontPath.includes(newestFont.name)) {
                 updatedSettings.customFontPath = newestFont.path;
                 
-                // Extract the original font name
                 const parts = newestFont.name.split('-');
-                parts.shift(); // Remove "font-" prefix
-                parts.shift(); // Remove timestamp
-                const fontName = parts.join('-').replace(/\.[^/.]+$/, ""); // Remove extension
+                parts.shift();
+                parts.shift();
+                const fontName = parts.join('-').replace(/\.[^/.]+$/, "");
                 
                 updatedSettings.customFontFamily = `custom-font-${fontName}`;
                 settingsChanged = true;
                 
-                // Load the font immediately
                 try {
                   const fontFace = new FontFace(updatedSettings.customFontFamily, `url(${newestFont.path})`);
                   await fontFace.load();
@@ -250,7 +215,6 @@ function App() {
               }
             }
             
-            // Only update settings if something changed
             if (settingsChanged) {
               setSettings(updatedSettings);
             }
@@ -262,19 +226,17 @@ function App() {
     };
     
     loadStoredFiles();
-  }, []); // Empty dependency array ensures this runs only once at app startup
+  }, []);
 
   // Customize keyboard shortcut for special sessions
   useEffect(() => {
     const handleSpecialSessionToggle = (sessionKey) => {
       if (specialSessionContext) {
         if (specialSessionContext.key === sessionKey) {
-          // Same key pressed → go back to original sessions
-          setSessions(specialSessionContext.allSessions);
+          setSessions(defaultSessionsData); // Reset to default sessions
           setCurrentSessionIndex(specialSessionContext.index);
           setSpecialSessionContext(null);
         } else {
-          // ✅ Different special session key → just switch directly
           setSessions([specialSessions[sessionKey]]);
           setCurrentSessionIndex(0);
           setSpecialSessionContext({
@@ -283,7 +245,6 @@ function App() {
           });
         }
       } else {
-        // First time entering special session → store current context
         setSpecialSessionContext({
           allSessions: sessions,
           index: currentSessionIndex,
@@ -294,7 +255,6 @@ function App() {
       }
       setKey((prevKey) => prevKey + 1);
     };
-    
 
     const handleKeyDown = (event) => {
       if (event.key === "1") {
@@ -302,14 +262,12 @@ function App() {
       } else if (event.key === "2") {
         handleSpecialSessionToggle("2");
       } else if (event.key === config.previousSession || event.key === config.nextSession) {
-        // If you're in special session, revert back to original sessions
         if (specialSessionContext) {
-          setSessions(specialSessionContext.allSessions);
+          setSessions(defaultSessionsData); // Reset to default sessions
           setCurrentSessionIndex(specialSessionContext.index);
           setSpecialSessionContext(null);
           setKey((prevKey) => prevKey + 1);
         } else {
-          // Otherwise, navigate normally
           if (event.key === config.previousSession) {
             handlePreviousSession();
           } else {
@@ -318,7 +276,6 @@ function App() {
         }
       }
     };
-    
 
     window.addEventListener('keydown', handleKeyDown);
     return () => {
@@ -326,7 +283,6 @@ function App() {
     };
   }, [specialSessionContext, sessions, currentSessionIndex]);
   
-  // Disable previous/next session when in a special session
   const handlePreviousSession = () => {
     if (!specialSessionContext && sessions.length > 1) {
       setCurrentSessionIndex((prevIndex) =>
@@ -354,8 +310,8 @@ function App() {
         config={config}
         session={{
           ...session,
-          label1: session.label1 || "正方",
-          label2: session.label2 || "反方"
+          label1: session.label1 || "",
+          label2: session.label2 || ""
         }}
         onPreviousSession={handlePreviousSession}
         onNextSession={handleNextSession}
@@ -368,7 +324,6 @@ function App() {
         onClose={() => setIsModalOpen(false)}
         setSessions={(newSessions) => {
           setSessions(newSessions);
-          // Reset special session context when sessions change
           setSpecialSessionContext(null);
         }}
         settings={settings}
