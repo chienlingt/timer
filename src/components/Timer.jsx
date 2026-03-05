@@ -98,7 +98,7 @@ function Timer({
     <div className="w-full h-full flex flex-col justify-center items-center -mt-10">
       {label && (
         <div 
-          className="text-[2rem] md:text-[2.5rem] lg:text-[3rem] xl:text-[3rem] font-bold" 
+          className="text-[2rem] md:text-[2.5rem] lg:text-[4.5rem] xl:text-[4.5rem] font-bold" 
           style={labelStyle}
         >
           {label}
